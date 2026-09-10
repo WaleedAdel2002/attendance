@@ -3,81 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة المحاضر | توليد رمز الحضور</title>
+  <title>لوحة المحاضر | تسجيل الحضور المقفل</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f1f5f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .card {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-      padding: 30px;
-      width: 100%;
-      max-width: 420px;
-      text-align: center;
-    }
-    h2 { margin: 0 0 15px; color: #0284c7; font-size: 22px; }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    .btn {
-      width: 100%;
-      padding: 12px;
-      background: #0284c7;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 15px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
+    body { font-family: system-ui, sans-serif; background: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); padding: 35px 30px; width: 100%; max-width: 440px; text-align: center; }
+    h2 { margin: 0 0 15px; color: #0f172a; }
+    input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+    .btn { width: 100%; padding: 13px; background: #0284c7; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
     .btn:hover { background: #0369a1; }
-    #qrWrap {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0;
-      min-height: 220px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
-      background: #e0f2fe;
-      color: #0369a1;
-    }
+    #qrWrap { display: flex; justify-content: center; margin: 20px 0; min-height: 220px; }
+    .badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; background: #fef3c7; color: #92400e; }
+    .info { font-size: 13px; color: #64748b; margin-top: 15px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>بدء جلسة الحضور</h2>
+    <h2>منظومة الحضور المؤمنة</h2>
     <div id="setup">
-      <input type="text" id="courseName" placeholder="اسم المقرر (مثال: نظم المعلومات الجغرافية)">
+      <input type="text" id="courseName" placeholder="اسم المقرر أو المحاضرة">
       <input type="number" id="radiusInput" value="30" placeholder="نطاق القاعة المسموح بالمتر">
       <button class="btn" onclick="startLecture()">تثبيت إحداثيات القاعة وبدء العرض</button>
     </div>
     <div id="displayArea" style="display:none;">
       <div id="qrWrap"></div>
-      <div class="badge">يتجدد الرمز خلال: <span id="secTimer">10</span> ثوانٍ</div>
-      <p style="font-size: 13px; color: #64748b; margin-top: 15px;" id="infoText"></p>
+      <div class="badge">صلاحية الرمز: <span id="secTimer">10</span> ثوانٍ</div>
+      <p class="info" id="infoText"></p>
     </div>
   </div>
 
@@ -94,7 +45,7 @@
         lng = pos.coords.longitude;
         document.getElementById("setup").style.display = "none";
         document.getElementById("displayArea").style.display = "block";
-        document.getElementById("infoText").innerText = `نطاق القاعة الجغرافي: ${radius} متر`;
+        document.getElementById("infoText").innerText = `نطاق القاعة: ${radius} متر | حماية منع مشاركة الروابط نشطة`;
 
         qr = new QRCode(document.getElementById("qrWrap"), { width: 220, height: 220 });
         updateQR();
@@ -109,11 +60,12 @@
     function updateQR() {
       timer = 10;
       const token = Math.random().toString(36).substring(2, 8);
+      const ts = Date.now(); // طابع الوقت الحالي بالمللي ثانية
       const course = encodeURIComponent(document.getElementById("courseName").value.trim() || "عام");
 
-      // حل مشكلة 404: حساب المسار الحالي بدقة مهما كان اسم المستودع على GitHub Pages
       const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-      const url = `${window.location.origin}${basePath}student.html?k=${token}&lat=${lat}&lng=${lng}&r=${radius}&c=${course}`;
+      // الرابط يحمل وقت توليده الدقيق ts
+      const url = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${lat}&lng=${lng}&r=${radius}&c=${course}`;
 
       qr.clear();
       qr.makeCode(url);

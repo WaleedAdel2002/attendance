@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الحضور | بوابة الطالب</title>
+  <title>تسجيل حضور الطالب</title>
   <style>
     :root {
-      --primary: #198754;
-      --bg: #eef2f7;
-      --text: #202124;
+      --primary: #0284c7;
+      --btn-success: #16a34a;
+      --bg: #f8fafc;
+      --text: #0f172a;
     }
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -19,80 +20,118 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      padding: 15px;
+      padding: 20px 15px;
       box-sizing: border-box;
     }
     .box {
       background: #fff;
-      padding: 30px 20px;
-      border-radius: 12px;
+      padding: 30px 24px;
+      border-radius: 16px;
       width: 100%;
-      max-width: 380px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
-      text-align: center;
+      max-width: 420px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
     }
-    h3 { margin-top: 0; font-size: 20px; color: #1e293b; }
-    .course-badge {
-      display: inline-block;
-      padding: 5px 12px;
-      background: #e8f5e9;
-      color: #2e7d32;
+    h3 { margin: 0 0 8px; font-size: 20px; text-align: center; color: #1e293b; }
+    .badge {
+      display: block;
+      margin: 0 auto 15px;
+      width: fit-content;
+      padding: 4px 14px;
+      background: #e0f2fe;
+      color: #0369a1;
       border-radius: 20px;
       font-size: 13px;
       font-weight: bold;
-      margin-bottom: 12px;
     }
-    p.hint { font-size: 13px; color: #64748b; margin-bottom: 20px; }
-    input {
+    .form-group { margin-bottom: 14px; text-align: right; }
+    label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #334155; }
+    input, select {
       width: 100%;
-      padding: 13px;
-      margin-bottom: 15px;
+      padding: 11px 13px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      font-size: 16px;
-      text-align: center;
+      font-size: 14px;
       box-sizing: border-box;
+      outline: none;
+      background-color: #fff;
+      font-family: inherit;
     }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     button {
       width: 100%;
       padding: 13px;
-      background: var(--primary);
+      background: var(--btn-success);
       color: #fff;
       border: none;
       border-radius: 8px;
       font-size: 16px;
       font-weight: bold;
       cursor: pointer;
-      transition: 0.2s ease;
+      margin-top: 10px;
+      transition: background 0.2s ease;
     }
+    button:hover { background: #15803d; }
     button:disabled { background: #94a3b8; cursor: not-allowed; }
     #status {
-      margin-top: 15px;
+      margin-top: 16px;
       padding: 12px;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 13px;
       display: none;
+      text-align: center;
       line-height: 1.5;
     }
-    .danger { background: #fee2e2; color: #991b1b; }
-    .success { background: #dcfce7; color: #166534; }
-    .info { background: #e0f2fe; color: #075985; }
+    .danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .info { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
   </style>
 </head>
 <body>
 
   <div class="box">
-    <div id="courseNameBadge" class="course-badge" style="display:none;"></div>
+    <div id="courseNameBadge" class="badge" style="display:none;"></div>
     <h3>تسجيل حضور المحاضرة</h3>
-    <p class="hint">أدخل رقمك الجامعي لتأكيد تواجدك داخل القاعة</p>
-    
-    <input type="text" id="stuId" placeholder="الرقم الجامعي" inputmode="numeric">
+    <p style="text-align:center; font-size:13px; color:#64748b; margin-top:0; margin-bottom:18px;">
+      سجل بياناتك الشخصية للتحقق من تواجدك بالقاعة
+    </p>
+
+    <div class="form-group">
+      <label for="fullName">الاسم رباعي</label>
+      <input type="text" id="fullName" placeholder="أدخل اسمك رباعياً كما بالكشف">
+    </div>
+
+    <div class="form-group">
+      <label for="gradeLevel">الفرقة الدراسية</label>
+      <select id="gradeLevel">
+        <option value="">-- اختر الفرقة --</option>
+        <option value="الفرقة الأولى">الفرقة الأولى</option>
+        <option value="الفرقة الثانية">الفرقة الثانية</option>
+        <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+        <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+      </select>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="groupNo">رقم المجموعة</label>
+        <input type="text" id="groupNo" placeholder="مثال: 1 أو أ">
+      </div>
+      <div class="form-group">
+        <label for="sectionNo">رقم السكشن</label>
+        <input type="text" id="sectionNo" placeholder="مثال: 3">
+      </div>
+    </div>
+
     <button id="subBtn" onclick="submitAttendance()">تأكيد الحضور</button>
     <div id="status"></div>
   </div>
 
   <script>
-    // الرابط الفعلي الخاص بنشرك على Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
 
     const params = new URLSearchParams(window.location.search);
@@ -100,20 +139,29 @@
     const targetLng = parseFloat(params.get("lng"));
     const allowedRadius = parseFloat(params.get("r")) || 30;
     const courseTitle = decodeURIComponent(params.get("c") || "");
+    const generatedTime = parseInt(params.get("ts"), 10);
 
     if (courseTitle && courseTitle !== "undefined" && courseTitle !== "عام") {
       const badge = document.getElementById("courseNameBadge");
       badge.innerText = courseTitle;
-      badge.style.display = "inline-block";
+      badge.style.display = "block";
+    }
+
+    // إنشاء بصمة مميزة للهاتف لمنع تكرار التسجيل من نفس الجهاز
+    function getDeviceIdentifier() {
+      let dId = localStorage.getItem("student_device_uuid");
+      if (!dId) {
+        dId = "DEV-" + Math.random().toString(36).substring(2, 10) + "-" + Date.now().toString(36);
+        localStorage.setItem("student_device_uuid", dId);
+      }
+      return dId;
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // نصف قطر الأرض بالمتر
+      const R = 6371e3;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) ** 2 +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) ** 2;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
@@ -125,16 +173,36 @@
     }
 
     function submitAttendance() {
-      const stuId = document.getElementById("stuId").value.trim();
+      const fullName = document.getElementById("fullName").value.trim();
+      const grade = document.getElementById("gradeLevel").value.trim();
+      const group = document.getElementById("groupNo").value.trim();
+      const section = document.getElementById("sectionNo").value.trim();
       const btn = document.getElementById("subBtn");
 
-      if (!stuId) return showMessage("يرجى إدخال الرقم الجامعي", "danger");
-      if (isNaN(targetLat) || isNaN(targetLng)) {
-        return showMessage("الرابط غير صالح، يرجى مسح الرمز من شاشة العرض بالقاعة", "danger");
+      if (!fullName || fullName.split(" ").length < 3) {
+        return showMessage("يرجى كتابة الاسم ثلاثياً أو رباعياً على الأقل", "danger");
+      }
+      if (!grade) {
+        return showMessage("يرجى اختيار الفرقة الدراسية", "danger");
+      }
+      if (!group || !section) {
+        return showMessage("يرجى كتابة رقم المجموعة ورقم السكشن", "danger");
+      }
+
+      // حماية صلاحية وقت الرمز (20 ثانية كحد أقصى لمنع تداول اللينك)
+      const now = Date.now();
+      if (!generatedTime || (now - generatedTime) > 20000) {
+        return showMessage("انتهت صلاحية الرمز، امسح الـ QR المعروض حالياً على الشاشة", "danger");
+      }
+
+      // حماية القفل المحلي للجهاز
+      const sessionKey = "registered_" + (courseTitle || "lecture");
+      if (localStorage.getItem(sessionKey)) {
+        return showMessage("تم تسجيل الحضور مسبقاً من هذا الجهاز لهذه المحاضرة!", "danger");
       }
 
       btn.disabled = true;
-      showMessage("جاري التحقق من موقعك الجغرافي داخل القاعة...", "info");
+      showMessage("جاري التحقق من إحداثيات تواجدك داخل القاعة...", "info");
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -147,32 +215,42 @@
             return showMessage(`أنت خارج نطاق القاعة المسموح (${Math.round(dist)} متر)`, "danger");
           }
 
-          showMessage("جاري حفظ الحضور في كشف المحاضرة على Google Drive...", "info");
+          showMessage("جاري توثيق البيانات ورفع الحضور إلى Google Drive...", "info");
+
+          const deviceId = getDeviceIdentifier();
 
           fetch(SCRIPT_URL, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              studentId: stuId,
+              studentName: fullName,
+              gradeLevel: grade,
+              groupNo: group,
+              sectionNo: section,
+              deviceId: deviceId,
               lectureTitle: courseTitle,
               coords: `${uLat.toFixed(6)}, ${uLng.toFixed(6)}`,
-              distance: dist,
-              isInside: true
+              distance: dist
             })
           })
           .then(() => {
-            showMessage("تم تسجيل حضورك بنجاح وحفظه في الشيت!", "success");
-            document.getElementById("stuId").disabled = true;
+            localStorage.setItem(sessionKey, fullName);
+            showMessage("تم تسجيل حضورك بنجاح وتوثيق بياناتك في كشف المحاضرة!", "success");
+            // تعطيل الحقول بعد نجاح التسجيل
+            document.getElementById("fullName").disabled = true;
+            document.getElementById("gradeLevel").disabled = true;
+            document.getElementById("groupNo").disabled = true;
+            document.getElementById("sectionNo").disabled = true;
           })
           .catch(() => {
             btn.disabled = false;
-            showMessage("تعذر الاتصال بالسيرفر، تأكد من اتصال الإنترنت", "danger");
+            showMessage("تعذر الاتصال، تأكد من اتصال الإنترنت وحاول ثانية", "danger");
           });
         },
         () => {
           btn.disabled = false;
-          showMessage("يجب تفعيل الـ GPS وإعطاء الإذن للمتصفح لإتمام التسجيل", "danger");
+          showMessage("يجب تفعيل الـ GPS وإعطاء الإذن للمتصفح", "danger");
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
