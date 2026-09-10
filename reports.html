@@ -3,66 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>سجل حضور الترم التراكمي</title>
+  <title>سجل الحضور التراكمي للفصل الدراسي</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; margin: 0; padding: 25px; color: #0f172a; }
+    :root {
+      --primary: #0284c7;
+      --navy: #0f172a;
+      --success: #16a34a;
+      --bg: #f8fafc;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      margin: 0;
+      padding: 25px;
+    }
     .container { max-width: 1100px; margin: auto; }
-    .card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .filter-bar { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 12px; margin-bottom: 20px; align-items: end; }
-    input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-    .btn { padding: 10px 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #0284c7; color: #fff; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .card { background: #fff; border-radius: 14px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 20px; }
+    .filter-grid { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 12px; margin-bottom: 20px; align-items: end; }
+    @media (max-width: 768px) { .filter-grid { grid-template-columns: 1fr; } }
+    label { font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    .btn { padding: 11px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: var(--primary); color: #fff; font-size: 14px; }
+    .btn:hover { background: #0369a1; }
     table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; margin-top: 15px; }
-    th, td { padding: 10px; border: 1px solid #e2e8f0; }
+    th, td { padding: 12px 10px; border: 1px solid var(--border); }
     th { background: #f8fafc; color: #475569; }
-    .pct-bar { background: #e2e8f0; border-radius: 10px; height: 10px; overflow: hidden; width: 100px; margin: auto; }
-    .pct-fill { background: #16a34a; height: 100%; }
+    .badge-count { background: #e0f2fe; color: #0284c7; padding: 4px 10px; border-radius: 12px; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <h2>سجل الحضور التراكمي للفصل الدراسي</h2>
+    <div class="header-bar">
+      <div>
+        <h2 style="margin: 0 0 5px; color: var(--navy);">سجل الحضور التراكمي للفصل الدراسي</h2>
+        <span style="font-size: 13px; color: #64748b;" id="profTag">جاري التعرف على المحاضر...</span>
+      </div>
       <a href="index.html" class="btn" style="text-decoration:none; background:#475569;">العودة للرئيسية</a>
     </div>
 
     <div class="card">
-      <div class="filter-bar">
+      <div class="filter-grid">
         <div>
-          <label style="font-size:12px; color:#64748b;">اختر المقرر</label>
-          <input type="text" id="repCourse" placeholder="اسم المقرر (اتركه فارغاً لعرض الكل)">
+          <label>اختر أو اكتب اسم المقرر</label>
+          <input type="text" id="repCourse" placeholder="اتركه فارغاً لعرض كافة مقرراتك">
         </div>
         <div>
-          <label style="font-size:12px; color:#64748b;">المجموعة</label>
+          <label>المجموعة</label>
           <input type="text" id="repGroup" placeholder="الكل">
         </div>
         <div>
-          <label style="font-size:12px; color:#64748b;">السكشن</label>
+          <label>السكشن</label>
           <input type="text" id="repSection" placeholder="الكل">
         </div>
         <button class="btn" onclick="fetchSummary()">عرض الكشف</button>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:14px; font-weight:bold; color:#334155;" id="summaryTxt">إجمالي الطلاب: 0</span>
-        <button class="btn" style="background:#16a34a; font-size:12px;" onclick="exportCumulativeCSV()">تصدير كشف الترم (Excel)</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border); padding-top: 15px;">
+        <span style="font-size:15px; font-weight:bold;" id="summaryTxt">إجمالي الطلاب: 0</span>
+        <button class="btn" style="background:#16a34a;" onclick="exportCumulativeCSV()">تصدير كشف الترم (Excel)</button>
       </div>
 
-      <div style="overflow-x:auto; max-height:500px; margin-top:15px;">
+      <div style="overflow-x:auto; max-height:550px; margin-top:15px;">
         <table>
           <thead>
             <tr>
               <th>م</th>
               <th>اسم الطالب</th>
-              <th>الفرقة</th>
+              <th>الفرقة الدراسية</th>
               <th>المجموعة</th>
               <th>السكشن</th>
-              <th>عدد مرات الحضور</th>
-              <th>نسبة الالتزام</th>
+              <th>المقرر الدراسي</th>
+              <th>مرات الحضور</th>
             </tr>
           </thead>
           <tbody id="repBody">
-            <tr><td colspan="7" style="color:#94a3b8;">اضغط على "عرض الكشف" لتحميل البيانات التراكمية من Google Drive...</td></tr>
+            <tr><td colspan="7" style="color:#94a3b8; padding: 25px;">اضغط على "عرض الكشف" لسحب البيانات التراكمية من السحابة...</td></tr>
           </tbody>
         </table>
       </div>
@@ -71,33 +90,85 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
+
+    // قراءة المستخدم من التخزين المشترك
+    let activeUser = JSON.parse(localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user") || "null");
     let reportData = [];
 
-    function fetchSummary() {
-      const course = document.getElementById("repCourse").value.trim();
-      document.getElementById("repBody").innerHTML = '<tr><td colspan="7">جاري سحب البيانات من السحابة...</td></tr>';
+    window.onload = function() {
+      if (activeUser) {
+        document.getElementById("profTag").innerText = `المحاضر: ${activeUser.name} (${activeUser.email})`;
+        fetchSummary(); // تحميل السجلات تلقائياً بمجرد فتح الصفحة
+      } else {
+        document.getElementById("profTag").innerText = "تنبيه: يجب تسجيل الدخول من الصفحة الرئيسية أولاً.";
+      }
+    };
 
-      fetch(`${SCRIPT_URL}?action=getLiveSession&course=${encodeURIComponent(course)}`)
-        .then(r => r.json())
+    function fetchSummary() {
+      if (!activeUser) {
+        alert("يرجى تسجيل الدخول أولاً من الصفحة الرئيسية");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const course = document.getElementById("repCourse").value.trim().toLowerCase();
+      const groupFilter = document.getElementById("repGroup").value.trim();
+      const secFilter = document.getElementById("repSection").value.trim();
+
+      document.getElementById("repBody").innerHTML = '<tr><td colspan="7" style="padding:20px;">جاري سحب السجلات من Google Drive...</td></tr>';
+
+      const url = `${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`;
+
+      fetch(url)
+        .then(res => res.json())
         .then(res => {
-          if (res.status === "success" && res.students) {
-            reportData = res.students;
+          if (res.status === "success" && Array.isArray(res.records)) {
+            // تجميع وتلخيص مرات الحضور لكل طالب
+            const aggMap = {};
+
+            res.records.forEach(r => {
+              const rCourse = (r.course || "عام").trim();
+              if (course && !rCourse.toLowerCase().includes(course)) return;
+              if (groupFilter && r.group != groupFilter) return;
+              if (secFilter && r.section != secFilter) return;
+
+              const key = `${r.name}_${r.grade}_${r.group}_${r.section}_${rCourse}`;
+              if (!aggMap[key]) {
+                aggMap[key] = {
+                  name: r.name,
+                  grade: r.grade,
+                  group: r.group,
+                  section: r.section,
+                  course: rCourse,
+                  count: 0
+                };
+              }
+              aggMap[key].count++;
+            });
+
+            reportData = Object.values(aggMap);
             renderReport();
+          } else {
+            document.getElementById("repBody").innerHTML = '<tr><td colspan="7">لا توجد سجلات مسجلة لهذا الحساب</td></tr>';
           }
-        }).catch(() => {
-          document.getElementById("repBody").innerHTML = '<tr><td colspan="7" style="color:red;">تعذر جلب البيانات</td></tr>';
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("repBody").innerHTML = '<tr><td colspan="7" style="color:red;">تعذر الاتصال بالسيرفر، تأكد من اتصال الإنترنت</td></tr>';
         });
     }
 
     function renderReport() {
       const tbody = document.getElementById("repBody");
       tbody.innerHTML = "";
+
       if (reportData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7">لا توجد سجلات مسجلة لهذا المقرر</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; color:#64748b;">لا توجد نتائج مطابقة لخيارات البحث</td></tr>';
+        document.getElementById("summaryTxt").innerText = "إجمالي الطلاب: 0";
         return;
       }
 
-      document.getElementById("summaryTxt").innerText = `إجمالي الحضور المسجل: ${reportData.length}`;
+      document.getElementById("summaryTxt").innerText = `إجمالي الطلاب: ${reportData.length}`;
 
       reportData.forEach((st, idx) => {
         tbody.innerHTML += `
@@ -107,25 +178,23 @@
             <td>${st.grade}</td>
             <td>${st.group}</td>
             <td>${st.section}</td>
-            <td>1 محاضرة</td>
-            <td>
-              <div class="pct-bar"><div class="pct-fill" style="width: 100%;"></div></div>
-            </td>
+            <td>${st.course}</td>
+            <td><span class="badge-count">${st.count} محاضرات</span></td>
           </tr>
         `;
       });
     }
 
     function exportCumulativeCSV() {
-      if (reportData.length === 0) return alert("لا توجد بيانات للتصدير");
-      let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,السكشن,وقت الحضور\n";
+      if (reportData.length === 0) return alert("لا توجد بيانات متاحة للتصدير");
+      let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,السكشن,المقرر,مرات الحضور\n";
       reportData.forEach((s, i) => {
-        csv += `${i+1},"${s.name}","${s.grade}","${s.group}","${s.section}","${s.time}"\n`;
+        csv += `${i+1},"${s.name}","${s.grade}","${s.group}","${s.section}","${s.course}",${s.count}\n`;
       });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `تقرير_حضور_الترم.csv`;
+      a.download = `تقرير_تراكمي_${activeUser.name}_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
     }
   </script>

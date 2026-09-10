@@ -3,94 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة المقررات الدراسية</title>
+  <title>إدارة المقررات الدراسية والجلسات</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; margin: 0; padding: 25px; color: #0f172a; }
-    .container { max-width: 900px; margin: auto; }
+    :root {
+      --primary: #0284c7;
+      --navy: #0f172a;
+      --success: #16a34a;
+      --bg: #f8fafc;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      margin: 0;
+      padding: 25px;
+    }
+    .container { max-width: 950px; margin: auto; }
     .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    input, select { width: 100%; padding: 11px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #0284c7; color: #fff; }
-    .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; }
-    .course-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; text-align: center; }
-    .btn-open { background: #16a34a; color: #fff; margin-top: 10px; width: 100%; }
-    .btn-del { background: #fee2e2; color: #991b1b; margin-top: 8px; width: 100%; }
+    .card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 25px; }
+    input, select { width: 100%; padding: 11px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    .btn { padding: 11px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: var(--primary); color: #fff; font-size: 14px; }
+    .btn:hover { background: #0369a1; }
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+    .course-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
+    .btn-launch { background: var(--success); color: #fff; margin-top: 12px; width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-launch:hover { background: #15803d; }
   </style>
 </head>
 <body>
 
   <div class="container">
     <div class="header-bar">
-      <h2>إدارة المقررات الأكاديمية</h2>
+      <div>
+        <h2 style="margin:0 0 5px; color:var(--navy);">المقررات والجلسات الأكاديمية</h2>
+        <span style="font-size:13px; color:#64748b;" id="userTitle">المحاضر: جاري التحميل...</span>
+      </div>
       <a href="index.html" class="btn" style="text-decoration:none; background:#475569;">العودة للرئيسية</a>
     </div>
 
+    <!-- إضافة مقرر جديد سريع -->
     <div class="card">
-      <h3>إضافة مقرر جديد</h3>
-      <input type="text" id="cTitle" placeholder="اسم المقرر (مثال: تحليل مكاني متقدم)">
-      <select id="cGrade">
-        <option value="الفرقة الأولى">الفرقة الأولى</option>
-        <option value="الفرقة الثانية">الفرقة الثانية</option>
-        <option value="الفرقة الثالثة">الفرقة الثالثة</option>
-        <option value="الفرقة الرابعة">الفرقة الرابعة</option>
-      </select>
-      <button class="btn" onclick="addCourse()">إضافة وحفظ المقرر</button>
+      <h3 style="margin-top:0;">إضافة جلسة مقرر جديد</h3>
+      <input type="text" id="newCourseName" placeholder="اسم المقرر (مثال: تحليل البيانات المكانية)">
+      <button class="btn" onclick="saveCourse()">بدء وفتح الجلسة في القاعة</button>
     </div>
 
-    <h3>المقررات المسجلة حالياً</h3>
-    <div class="course-grid" id="coursesList"></div>
+    <h3 style="color:var(--navy);">المقررات والجلسات المسجلة لك في الشيت</h3>
+    <div class="course-grid" id="coursesGrid">
+      <p style="color:#64748b;">جاري استخراج المقررات من قاعدة البيانات السحابية...</p>
+    </div>
   </div>
 
   <script>
-    let courses = JSON.parse(localStorage.getItem("academic_courses") || "[]");
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
+    let activeUser = JSON.parse(localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user") || "null");
 
-    if (courses.length === 0) {
-      courses = [
-        { id: 1, title: "نظم المعلومات الجغرافية 2", grade: "الفرقة الثالثة" },
-        { id: 2, title: "الاستشعار عن بعد ومسح جوي", grade: "الفرقة الرابعة" }
-      ];
-      localStorage.setItem("academic_courses", JSON.stringify(courses));
-    }
-
-    function renderCourses() {
-      const container = document.getElementById("coursesList");
-      container.innerHTML = "";
-      courses.forEach((c, idx) => {
-        container.innerHTML += `
-          <div class="course-card">
-            <h4 style="margin:0 0 5px;">${c.title}</h4>
-            <span style="font-size:12px; color:#64748b;">${c.grade}</span>
-            <button class="btn btn-open" onclick="openSession('${c.title}')">فتح جلسة حضور الآن</button>
-            <button class="btn btn-del" onclick="deleteCourse(${idx})">حذف</button>
-          </div>
-        `;
-      });
-    }
-
-    function addCourse() {
-      const title = document.getElementById("cTitle").value.trim();
-      const grade = document.getElementById("cGrade").value;
-      if (!title) return alert("أدخل اسم المقرر");
-      courses.push({ id: Date.now(), title, grade });
-      localStorage.setItem("academic_courses", JSON.stringify(courses));
-      renderCourses();
-      document.getElementById("cTitle").value = "";
-    }
-
-    function deleteCourse(idx) {
-      if (confirm("هل تريد حذف هذا المقرر؟")) {
-        courses.splice(idx, 1);
-        localStorage.setItem("academic_courses", JSON.stringify(courses));
-        renderCourses();
+    window.onload = function() {
+      if (activeUser) {
+        document.getElementById("userTitle").innerText = `المحاضر: ${activeUser.name}`;
+        loadCoursesFromCloud();
+      } else {
+        alert("يرجى تسجيل الدخول أولاً من الصفحة الرئيسية");
+        window.location.href = "index.html";
       }
+    };
+
+    function loadCoursesFromCloud() {
+      const grid = document.getElementById("coursesGrid");
+      const url = `${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`;
+
+      fetch(url)
+        .then(r => r.json())
+        .then(res => {
+          if (res.status === "success" && Array.isArray(res.records)) {
+            // استخراج أسماء المقررات الفريدة وعدد الطلاب في كل مقرر
+            const courseStats = {};
+            res.records.forEach(r => {
+              const cName = (r.course || "محاضرة عامة").trim();
+              if (!courseStats[cName]) courseStats[cName] = 0;
+              courseStats[cName]++;
+            });
+
+            const uniqueCourses = Object.keys(courseStats);
+            if (uniqueCourses.length === 0) {
+              grid.innerHTML = '<p style="color:#64748b;">لا توجد جلسات سابقة مسجلة لك بعد، ابدأ بإضافة أول مقرر بالأعلى.</p>';
+              return;
+            }
+
+            grid.innerHTML = "";
+            uniqueCourses.forEach(c => {
+              grid.innerHTML += `
+                <div class="course-card">
+                  <h4 style="margin:0 0 6px; font-size:16px;">${c}</h4>
+                  <span style="font-size:12px; color:#64748b;">إجمالي السجلات: ${courseStats[c]} تسجيل</span>
+                  <button class="btn-launch" onclick="launchSession('${c}')">فتح جلسة حضور الآن</button>
+                </div>
+              `;
+            });
+          }
+        })
+        .catch(() => {
+          grid.innerHTML = '<p style="color:red;">تعذر تحميل المقررات، تحقق من الاتصال بالإنترنت.</p>';
+        });
     }
 
-    function openSession(title) {
-      sessionStorage.setItem("preset_course", title);
+    function saveCourse() {
+      const name = document.getElementById("newCourseName").value.trim();
+      if (!name) return alert("أدخل اسم المقرر أولاً");
+      launchSession(name);
+    }
+
+    function launchSession(courseName) {
+      localStorage.setItem("preset_course", courseName);
       window.location.href = "index.html";
     }
-
-    renderCourses();
   </script>
 </body>
 </html>
