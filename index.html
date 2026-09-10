@@ -475,33 +475,46 @@
           </div>
         </div>
 
-<!-- نافذة التحضير اليدوي المنبثقة -->
-<div id="manualModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); z-index:4000; justify-content:center; align-items:center; padding:20px;">
-  <div style="background:#fff; border-radius:16px; width:100%; max-width:400px; padding:25px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-    <h3 style="margin:0 0 6px; color:var(--navy);">تسجيل طالب يدوياً</h3>
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">خاص بحالات الطلاب الذين لا يحملون هواتف داخل القاعة</p>
-    
-    <input type="text" id="mStudentName" class="input-field" placeholder="اسم الطالب رباعي">
-    
-    <select id="mGrade" class="input-field">
-      <option value="">-- اختر الفرقة --</option>
-      <option value="الفرقة الأولى">الفرقة الأولى</option>
-      <option value="الفرقة الثانية">الفرقة الثانية</option>
-      <option value="الفرقة الثالثة">الفرقة الثالثة</option>
-      <option value="الفرقة الرابعة">الفرقة الرابعة</option>
-    </select>
+<!-- نافذة التحضير اليدوي مع خاصية الإكمال التلقائي الذكي -->
+  <div id="manualModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.65); z-index:4000; justify-content:center; align-items:center; padding:15px; backdrop-filter:blur(3px);">
+    <div style="background:#fff; border-radius:16px; width:100%; max-width:440px; padding:25px; box-shadow:0 20px 40px rgba(0,0,0,0.25); text-align:right;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; font-size:18px; color:var(--navy);">تسجيل طالب يدوياً</h3>
+        <button onclick="closeManualModal()" style="background:none; border:none; font-size:18px; cursor:pointer; color:#94a3b8;">✕</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-top:0; margin-bottom:15px;">اكتب اسم الطالب أو كوده، وسيتم جلب باقي البيانات تلقائياً</p>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-      <input type="text" id="mGroup" class="input-field" placeholder="المجموعة">
-      <input type="text" id="mSection" class="input-field" placeholder="السكشن">
-    </div>
+      <!-- حقل الاسم المرتبط بقائمة الإكمال التلقائي -->
+      <label style="font-size:12px; font-weight:bold; color:#475569;">اسم الطالب أو الكود</label>
+      <input type="text" id="mStudentName" class="input-field" list="studentsAutoList" placeholder="اكتب اسم الطالب للبحث..." oninput="onStudentSelect(this.value)">
+      <datalist id="studentsAutoList"></datalist>
+      
+      <label style="font-size:12px; font-weight:bold; color:#475569; margin-top:8px; display:block;">الفرقة الدراسية</label>
+      <select id="mGrade" class="input-field">
+        <option value="">-- اختر الفرقة الدراسية --</option>
+        <option value="الفرقة الأولى">الفرقة الأولى</option>
+        <option value="الفرقة الثانية">الفرقة الثانية</option>
+        <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+        <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+      </select>
 
-    <div style="display:flex; gap:10px; margin-top:10px;">
-      <button class="btn-main" style="background:var(--success);" onclick="submitManualAttendance()">تأكيد التحضير</button>
-      <button class="btn-main" style="background:#e2e8f0; color:#334155;" onclick="closeManualModal()">إلغاء</button>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:12px; font-weight:bold; color:#475569;">المجموعة</label>
+          <input type="text" id="mGroup" class="input-field" placeholder="المجموعة">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:bold; color:#475569;">السكشن</label>
+          <input type="text" id="mSection" class="input-field" placeholder="السكشن">
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="btn-main" id="mSubmitBtn" style="background:var(--success);" onclick="submitManualAttendance()">تأكيد وإضافة للكشف</button>
+        <button class="btn-main" style="background:#e2e8f0; color:#334155;" onclick="closeManualModal()">إلغاء</button>
+      </div>
     </div>
   </div>
-</div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -802,6 +815,131 @@ function openManualModal() {
         setTimeout(pullAttendees, 1000);
       }).catch(() => {
         alert("حدث خطأ أثناء الإرسال، تحقق من الإنترنت");
+      });
+    }
+// قاعدة بيانات الطلاب المحلية المدمجة للإكمال التلقائي
+    let autocompleteDB = [];
+
+    // تجميع وتحديث قاعدة بيانات الإكمال التلقائي من المصدرين
+    function buildAutocompleteIndex() {
+      autocompleteDB = [];
+      const seen = new Set();
+
+      // المصدر 1: كشف الإكسيل المستورد (إن وجد)
+      const roster = JSON.parse(localStorage.getItem("roster_students") || "[]");
+      roster.forEach(s => {
+        if (s.name && !seen.has(s.name.trim())) {
+          seen.add(s.name.trim());
+          autocompleteDB.push({
+            name: s.name.trim(),
+            id: s.id || "",
+            grade: s.grade || "",
+            group: s.group || "",
+            section: s.section || "",
+            source: "Excel"
+          });
+        }
+      });
+
+      // المصدر 2: الطلاب الذين سبق لهم الحضور في محاضرات هذا الدكتور
+      const cached = JSON.parse(localStorage.getItem("history_students_" + (activeUser ? activeUser.email : "")) || "[]");
+      cached.forEach(s => {
+        if (s.name && !seen.has(s.name.trim())) {
+          seen.add(s.name.trim());
+          autocompleteDB.push(s);
+        }
+      });
+
+      // ملء قائمة الـ datalist
+      const dl = document.getElementById("studentsAutoList");
+      if (dl) {
+        dl.innerHTML = "";
+        autocompleteDB.forEach(item => {
+          const opt = document.createElement("option");
+          opt.value = item.name;
+          opt.label = (item.id ? `كود: ${item.id} | ` : "") + `مجموعة: ${item.group} - سكشن: ${item.section}`;
+          dl.appendChild(opt);
+        });
+      }
+    }
+
+    // تعبئة الحقول تلقائياً بمجرد اختيار الاسم
+    function onStudentSelect(val) {
+      if (!val) return;
+      const cleanVal = val.trim().toLowerCase();
+      const match = autocompleteDB.find(s => s.name.toLowerCase() === cleanVal || (s.id && s.id.toString() === cleanVal));
+      
+      if (match) {
+        document.getElementById("mStudentName").value = match.name;
+        if (match.grade) document.getElementById("mGrade").value = match.grade;
+        if (match.group) document.getElementById("mGroup").value = match.group;
+        if (match.section) document.getElementById("mSection").value = match.section;
+      }
+    }
+
+    function openManualModal() {
+      if (!currentCourse) return alert("يرجى بدء الجلسة وتحديد اسم المقرر أولاً");
+      buildAutocompleteIndex(); // تجهيز القائمة بأحدث أسماء
+      document.getElementById("manualModal").style.display = "flex";
+    }
+
+    function closeManualModal() {
+      document.getElementById("manualModal").style.display = "none";
+      document.getElementById("mStudentName").value = "";
+      document.getElementById("mGrade").value = "";
+      document.getElementById("mGroup").value = "";
+      document.getElementById("mSection").value = "";
+    }
+
+    // حفظ الطالب في الذاكرة التراكمية عند تسجيله أول مرة
+    function rememberStudent(student) {
+      const key = "history_students_" + (activeUser ? activeUser.email : "");
+      let history = JSON.parse(localStorage.getItem(key) || "[]");
+      if (!history.some(s => s.name === student.name)) {
+        history.push(student);
+        localStorage.setItem(key, JSON.stringify(history));
+      }
+    }
+
+    function submitManualAttendance() {
+      const name = document.getElementById("mStudentName").value.trim();
+      const grade = document.getElementById("mGrade").value.trim();
+      const group = document.getElementById("mGroup").value.trim();
+      const section = document.getElementById("mSection").value.trim();
+      const btn = document.getElementById("mSubmitBtn");
+
+      if (!name || !grade) return alert("يرجى إدخال اسم الطالب واختيار الفرقة الدراسية");
+
+      btn.disabled = true;
+      btn.innerText = "جاري التسجيل...";
+
+      // حفظ الطالب محلياً ليكون متاحاً للإكمال التلقائي في المرات القادمة
+      rememberStudent({ name: name, grade: grade, group: group, section: section });
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lecturerEmail: activeUser.email,
+          studentName: name + " (يدوي)",
+          gradeLevel: grade,
+          groupNo: group || "-",
+          sectionNo: section || "-",
+          deviceId: "تحضير_يدوي_بواسطة_المحاضر",
+          courseTitle: currentCourse,
+          coords: `${roomLat.toFixed(5)}, ${roomLng.toFixed(5)}`,
+          distance: 0
+        })
+      }).then(() => {
+        btn.disabled = false;
+        btn.innerText = "تأكيد وإضافة للكشف";
+        closeManualModal();
+        setTimeout(pullAttendees, 1200);
+      }).catch(() => {
+        btn.disabled = false;
+        btn.innerText = "تأكيد وإضافة للكشف";
+        alert("تعذر الاتصال بالسيرفر");
       });
     }
   </script>

@@ -5,18 +5,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل حضور الطالب</title>
   <style>
-    :root { --primary: #0284c7; --btn-ok: #16a34a; --bg: #f8fafc; --text: #0f172a; }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 15px; box-sizing: border-box; }
-    .box { background: #fff; padding: 30px 24px; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-    h3 { margin: 0 0 8px; font-size: 20px; text-align: center; color: #1e293b; }
-    .badge { display: block; margin: 0 auto 15px; width: fit-content; padding: 4px 14px; background: #e0f2fe; color: #0369a1; border-radius: 20px; font-size: 13px; font-weight: bold; }
-    .form-group { margin-bottom: 14px; text-align: right; }
-    label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #334155; }
-    input, select { width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; background-color: #fff; font-family: inherit; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    button { width: 100%; padding: 13px; background: var(--btn-ok); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    button:disabled { background: #94a3b8; cursor: not-allowed; }
-    #status { margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 13px; display: none; text-align: center; line-height: 1.5; }
+    :root {
+      --primary: #0284c7;
+      --btn-ok: #16a34a;
+      --bg: #f8fafc;
+      --text: #0f172a;
+      --border: #cbd5e1;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px 15px;
+      box-sizing: border-box;
+    }
+    .box {
+      background: #fff;
+      padding: 30px 24px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      text-align: center;
+      color: #1e293b;
+    }
+    .badge {
+      display: block;
+      margin: 0 auto 15px;
+      width: fit-content;
+      padding: 4px 14px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .form-group {
+      margin-bottom: 14px;
+      text-align: right;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+    input, select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+      background-color: #fff;
+      font-family: inherit;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    button {
+      width: 100%;
+      padding: 13px;
+      background: var(--btn-ok);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s ease;
+    }
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+      text-align: center;
+      line-height: 1.5;
+    }
     .danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
     .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .info { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
@@ -28,12 +118,13 @@
     <div id="courseNameBadge" class="badge" style="display:none;"></div>
     <h3>تسجيل حضور المحاضرة</h3>
     <p style="text-align:center; font-size:13px; color:#64748b; margin-top:0; margin-bottom:18px;">
-      سجل بياناتك الشخصية للتحقق من تواجدك بالقاعة
+      تحقق من بياناتك لتأكيد تواجدك داخل القاعة
     </p>
 
     <div class="form-group">
-      <label for="fullName">الاسم رباعي</label>
-      <input type="text" id="fullName" placeholder="أدخل اسمك رباعياً كما بالكشف">
+      <label for="fullName">الاسم رباعي أو الكود الجامعي</label>
+      <input type="text" id="fullName" list="studentNamesList" placeholder="أدخل اسمك رباعياً كما بالكشف" oninput="handleAutoLookup(this.value)">
+      <datalist id="studentNamesList"></datalist>
     </div>
 
     <div class="form-group">
@@ -73,6 +164,64 @@
     const lecturerEmail = decodeURIComponent(params.get("u") || "");
     const generatedTime = parseInt(params.get("ts"), 10);
 
+    // قاعدة بيانات الطلاب المخزنة محلياً على هاتف الطالب للإكمال التلقائي
+    let studentCache = JSON.parse(localStorage.getItem("student_roster_cache") || "[]");
+
+    window.onload = function() {
+      // 1. التعبئة التلقائية الفورية من آخر تسجيل ناجح على هذا الهاتف
+      const savedName = localStorage.getItem("saved_student_name");
+      const savedGrade = localStorage.getItem("saved_student_grade");
+      const savedGroup = localStorage.getItem("saved_student_group");
+      const savedSection = localStorage.getItem("saved_student_section");
+
+      if (savedName) document.getElementById("fullName").value = savedName;
+      if (savedGrade) document.getElementById("gradeLevel").value = savedGrade;
+      if (savedGroup) document.getElementById("groupNo").value = savedGroup;
+      if (savedSection) document.getElementById("sectionNo").value = savedSection;
+
+      // 2. تعبئة قائمة الإكمال التلقائي إن وجدت أسماء سابقة
+      populateDatalist();
+    };
+
+    function populateDatalist() {
+      const dl = document.getElementById("studentNamesList");
+      dl.innerHTML = "";
+
+      // إضافة الاسم المحفوظ كأول خيار
+      const savedName = localStorage.getItem("saved_student_name");
+      if (savedName) {
+        const opt = document.createElement("option");
+        opt.value = savedName;
+        dl.appendChild(opt);
+      }
+
+      studentCache.forEach(st => {
+        if (st.name && st.name !== savedName) {
+          const opt = document.createElement("option");
+          opt.value = st.name;
+          opt.label = st.id ? `كود: ${st.id}` : "";
+          dl.appendChild(opt);
+        }
+      });
+    }
+
+    // البحث السريع لملء الفرقة والمجموعة والسكشن بمجرد اختيار الاسم
+    function handleAutoLookup(val) {
+      if (!val) return;
+      const cleanVal = val.trim().toLowerCase();
+      const match = studentCache.find(s => 
+        (s.name && s.name.toLowerCase() === cleanVal) || 
+        (s.id && s.id.toString() === cleanVal)
+      );
+
+      if (match) {
+        document.getElementById("fullName").value = match.name;
+        if (match.grade) document.getElementById("gradeLevel").value = match.grade;
+        if (match.group) document.getElementById("groupNo").value = match.group;
+        if (match.section) document.getElementById("sectionNo").value = match.section;
+      }
+    }
+
     function showMessage(msg, type) {
       const el = document.getElementById("status");
       el.className = type;
@@ -86,7 +235,7 @@
       badge.style.display = "block";
     }
 
-    // فحص صلاحية فتح الرابط (مهلة 90 ثانية كحد أقصى للمسح من الشاشة)
+    // فحص صلاحية الرمز (مهلة 90 ثانية كحد أقصى للمسح من الشاشة)
     const now = Date.now();
     const timeDiff = now - generatedTime;
     if (!generatedTime || timeDiff > 90000 || timeDiff < -30000) {
@@ -164,7 +313,13 @@
             })
           })
           .then(() => {
+            // حفظ بيانات الطالب في الذاكرة لتعبئتها تلقائياً في كل المحاضرات التالية
+            localStorage.setItem("saved_student_name", fullName);
+            localStorage.setItem("saved_student_grade", grade);
+            localStorage.setItem("saved_student_group", group);
+            localStorage.setItem("saved_student_section", section);
             localStorage.setItem(sessionKey, fullName);
+
             showMessage("تم تسجيل حضورك بنجاح وتوثيق بياناتك في كشف المحاضرة!", "success");
             document.getElementById("fullName").disabled = true;
             document.getElementById("gradeLevel").disabled = true;
