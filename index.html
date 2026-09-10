@@ -11,10 +11,9 @@
       --navy: #0f172a;
       --success: #16a34a;
       --bg: #f8fafc;
-      --card: #ffffff;
       --border: #e2e8f0;
     }
-    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 0; }
     
     /* نافذة تسجيل الدخول */
     #loginOverlay {
@@ -47,7 +46,7 @@
 </head>
 <body>
 
-  <!-- نافذة الدخول الإلزامية للتحقق من الحساب -->
+  <!-- نافذة تسجيل الدخول للمحاضر -->
   <div id="loginOverlay">
     <div class="login-box">
       <h2 style="margin:0 0 8px; color:var(--primary);">تسجيل الدخول الأكاديمي</h2>
@@ -59,13 +58,17 @@
     </div>
   </div>
 
-  <!-- لوحة التحكم الفعلية -->
+  <!-- واجهة لوحة المحاضر -->
   <header>
     <div>
       <h3 style="margin:0; color:var(--primary);" id="displayProfName">د. عضو هيئة التدريس</h3>
       <span style="font-size:12px; color:#64748b;" id="displayProfDept">قسم الجغرافيا ونظم المعلومات الجغرافية</span>
     </div>
-    <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="logout()">تسجيل الخروج</button>
+    <div style="display:flex; gap:10px;">
+      <a href="courses.html" style="text-decoration:none; padding:7px 14px; background:#f1f5f9; border-radius:6px; font-size:12px; font-weight:bold; color:#334155;">المقررات</a>
+      <a href="reports.html" style="text-decoration:none; padding:7px 14px; background:#f1f5f9; border-radius:6px; font-size:12px; font-weight:bold; color:#334155;">التقارير</a>
+      <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="logout()">خروج</button>
+    </div>
   </header>
 
   <div class="container">
@@ -85,7 +88,7 @@
     </div>
 
     <div class="grid-dash">
-      <!-- توليد الـ QR -->
+      <!-- إنشاء الجلسة ورمز الحضور -->
       <div class="panel" style="text-align: center;">
         <h3 style="margin-top:0;">إنشاء الجلسة ورمز الحضور</h3>
         <div id="sessionInputs">
@@ -103,7 +106,7 @@
         </div>
       </div>
 
-      <!-- جدول الحضور المباشر للدكتور الحالي فقط -->
+      <!-- كشف حضور الطلاب المباشر -->
       <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <h3 style="margin:0;">كشف حضور الطلاب المسجلين</h3>
@@ -142,7 +145,6 @@
     let qrGenerator = null, countdown = 10;
     let attendees = [];
 
-    // التحقق عند تحميل الصفحة
     window.onload = function() {
       if (activeUser) {
         document.getElementById("loginOverlay").style.display = "none";
@@ -151,6 +153,7 @@
       }
     };
 
+    // تسجيل الدخول عبر تقنية JSONP لضمان الاستجابة الفورية
     function processLogin() {
       const email = document.getElementById("authEmail").value.trim();
       const pass = document.getElementById("authPass").value.trim();
@@ -161,28 +164,28 @@
       btn.innerText = "جاري التحقق من الخادم...";
       msg.style.display = "none";
 
-      fetch(`${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`)
-        .then(r => r.json())
-        .then(res => {
-          btn.disabled = false;
-          btn.innerText = "تحقق ودخول";
-          if (res.status === "success") {
-            activeUser = res.user;
-            sessionStorage.setItem("auth_user", JSON.stringify(activeUser));
-            document.getElementById("loginOverlay").style.display = "none";
-            document.getElementById("displayProfName").innerText = activeUser.name;
-            document.getElementById("displayProfDept").innerText = activeUser.dept;
-          } else {
-            msg.innerText = res.message || "بيانات الدخول غير صحيحة";
-            msg.style.display = "block";
-          }
-        })
-        .catch(() => {
-          btn.disabled = false;
-          btn.innerText = "تحقق ودخول";
-          msg.innerText = "تعذر الاتصال بالخادم، تحقق من الإنترنت";
+      const cb = "cb_login_" + Date.now();
+      const s = document.createElement("script");
+
+      window[cb] = function(res) {
+        btn.disabled = false;
+        btn.innerText = "تحقق ودخول";
+        if (res.status === "success") {
+          activeUser = res.user;
+          sessionStorage.setItem("auth_user", JSON.stringify(activeUser));
+          document.getElementById("loginOverlay").style.display = "none";
+          document.getElementById("displayProfName").innerText = activeUser.name;
+          document.getElementById("displayProfDept").innerText = activeUser.dept;
+        } else {
+          msg.innerText = res.message || "بيانات الدخول غير صحيحة";
           msg.style.display = "block";
-        });
+        }
+        delete window[cb];
+        document.body.removeChild(s);
+      };
+
+      s.src = `${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}&callback=${cb}`;
+      document.body.appendChild(s);
     }
 
     function logout() {
@@ -213,9 +216,9 @@
           if (countdown >= 0) document.getElementById("timerTxt").innerText = countdown;
         }, 1000);
 
-        // سحب وتحديث كشف الحضور اللحظي كل 4 ثوانٍ
+        // جلب وتحديث كشف الحضور اللحظي كل ثانيتين ونصف
         pullAttendees();
-        setInterval(pullAttendees, 4000);
+        setInterval(pullAttendees, 2500);
       }, () => alert("يرجى إعطاء صلاحية الـ GPS"), { enableHighAccuracy: true });
     }
 
@@ -225,23 +228,30 @@
       const ts = Date.now();
       const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
       
-      // نرسل بريد المحاضر المشرف داخل الرابط لربط تسجيل الطالب به تلقائياً
       const targetUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(currentCourse)}&u=${encodeURIComponent(activeUser.email)}`;
       
       qrGenerator.clear();
       qrGenerator.makeCode(targetUrl);
     }
 
-    // سحب حضور المحاضر الحالي فقط
+    // جلب الحضور اللحظي عبر JSONP الموثوق به دون تعليق CORS
     function pullAttendees() {
-      fetch(`${SCRIPT_URL}?action=getLiveSession&lecturerEmail=${encodeURIComponent(activeUser.email)}&course=${encodeURIComponent(currentCourse)}`)
-        .then(r => r.json())
-        .then(res => {
-          if (res.status === "success" && res.students) {
-            attendees = res.students;
-            renderTable();
-          }
-        }).catch(() => {});
+      if (!activeUser || !currentCourse) return;
+
+      const cb = "cb_pull_" + Date.now();
+      const s = document.createElement("script");
+
+      window[cb] = function(res) {
+        if (res.status === "success" && res.students) {
+          attendees = res.students;
+          renderTable();
+        }
+        delete window[cb];
+        document.body.removeChild(s);
+      };
+
+      s.src = `${SCRIPT_URL}?action=getLiveSession&lecturerEmail=${encodeURIComponent(activeUser.email)}&course=${encodeURIComponent(currentCourse)}&callback=${cb}`;
+      document.body.appendChild(s);
     }
 
     function renderTable() {
