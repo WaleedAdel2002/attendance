@@ -7,7 +7,7 @@
   <style>
     :root {
       --primary: #0284c7;
-      --btn-success: #16a34a;
+      --btn-ok: #16a34a;
       --bg: #f8fafc;
       --text: #0f172a;
     }
@@ -33,7 +33,7 @@
       border: 1px solid #e2e8f0;
     }
     h3 { margin: 0 0 8px; font-size: 20px; text-align: center; color: #1e293b; }
-    .badge {
+    .course-badge {
       display: block;
       margin: 0 auto 15px;
       width: fit-content;
@@ -65,7 +65,7 @@
     button {
       width: 100%;
       padding: 13px;
-      background: var(--btn-success);
+      background: var(--btn-ok);
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -75,7 +75,6 @@
       margin-top: 10px;
       transition: background 0.2s ease;
     }
-    button:hover { background: #15803d; }
     button:disabled { background: #94a3b8; cursor: not-allowed; }
     #status {
       margin-top: 16px;
@@ -94,7 +93,7 @@
 <body>
 
   <div class="box">
-    <div id="courseNameBadge" class="badge" style="display:none;"></div>
+    <div id="courseNameBadge" class="course-badge" style="display:none;"></div>
     <h3>تسجيل حضور المحاضرة</h3>
     <p style="text-align:center; font-size:13px; color:#64748b; margin-top:0; margin-bottom:18px;">
       سجل بياناتك الشخصية للتحقق من تواجدك بالقاعة
@@ -119,11 +118,11 @@
     <div class="grid-2">
       <div class="form-group">
         <label for="groupNo">رقم المجموعة</label>
-        <input type="text" id="groupNo" placeholder="مثال: 1 أو أ">
+        <input type="text" id="groupNo" placeholder="مثال: 1">
       </div>
       <div class="form-group">
         <label for="sectionNo">رقم السكشن</label>
-        <input type="text" id="sectionNo" placeholder="مثال: 3">
+        <input type="text" id="sectionNo" placeholder="مثال: 2">
       </div>
     </div>
 
@@ -148,14 +147,13 @@
       el.style.display = "block";
     }
 
-    // إظهار اسم المقرر
     if (courseTitle && courseTitle !== "undefined" && courseTitle !== "عام") {
       const badge = document.getElementById("courseNameBadge");
       badge.innerText = courseTitle;
       badge.style.display = "block";
     }
 
-    // فحص وقت الرابط فور فتح الصفحة (مهلة 90 ثانية للمسح)
+    // التحقق من صلاحية فتح الرابط (مهلة 90 ثانية كحد أقصى للمسح من الشاشة)
     const now = Date.now();
     const timeDiff = now - generatedTime;
     if (!generatedTime || timeDiff > 90000 || timeDiff < -30000) {
@@ -165,7 +163,7 @@
       }, 200);
     }
 
-    // بصمة الجهاز
+    // بصمة الجهاز الفريدة
     function getDeviceIdentifier() {
       let dId = localStorage.getItem("student_device_uuid");
       if (!dId) {
@@ -200,7 +198,6 @@
         return showMessage("يرجى كتابة رقم المجموعة ورقم السكشن", "danger");
       }
 
-      // منع تكرار التسجيل من نفس الجهاز لنفس المحاضرة
       const sessionKey = "registered_" + (courseTitle || "lecture");
       if (localStorage.getItem(sessionKey)) {
         return showMessage("تم تسجيل الحضور مسبقاً من هذا الجهاز لهذه المحاضرة!", "danger");
@@ -220,7 +217,7 @@
             return showMessage(`أنت خارج نطاق القاعة المسموح (${Math.round(dist)} متر)`, "danger");
           }
 
-          showMessage("جاري توثيق البيانات ورفع الحضور إلى Google Drive...", "info");
+          showMessage("جاري توثيق البيانات ورفع الحضور إلى السحابة...", "info");
 
           const deviceId = getDeviceIdentifier();
 
@@ -234,7 +231,7 @@
               groupNo: group,
               sectionNo: section,
               deviceId: deviceId,
-              lectureTitle: courseTitle,
+              courseTitle: courseTitle,
               coords: `${uLat.toFixed(6)}, ${uLng.toFixed(6)}`,
               distance: dist
             })

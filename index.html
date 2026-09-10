@@ -3,72 +3,284 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة المحاضر | تسجيل الحضور المقفل</title>
+  <title>بوابة المحاضر | نظام الحضور الذكي</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; background: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-    .card { background: #fff; border-radius: 16px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); padding: 35px 30px; width: 100%; max-width: 440px; text-align: center; }
-    h2 { margin: 0 0 15px; color: #0f172a; }
-    input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-    .btn { width: 100%; padding: 13px; background: #0284c7; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; }
-    .btn:hover { background: #0369a1; }
-    #qrWrap { display: flex; justify-content: center; margin: 20px 0; min-height: 220px; }
-    .badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; background: #fef3c7; color: #92400e; }
-    .info { font-size: 13px; color: #64748b; margin-top: 15px; }
+    :root {
+      --primary: #1e3a8a;
+      --secondary: #0284c7;
+      --success: #16a34a;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+    }
+    #loginView {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .login-card {
+      background: #fff;
+      padding: 35px 30px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .btn-main {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-main:hover { background: #172554; }
+
+    #dashView { display: none; }
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .main-wrap { max-width: 1200px; margin: 25px auto; padding: 0 20px; }
+    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+    .stat-card h4 { margin: 0 0 8px; color: #64748b; font-size: 13px; }
+    .stat-card .val { font-size: 24px; font-weight: bold; color: var(--primary); }
+
+    .grid-panels { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+    @media (max-width: 900px) { .grid-panels { grid-template-columns: 1fr; } }
+    
+    .panel { background: #fff; border-radius: 12px; padding: 25px; border: 1px solid var(--border); }
+    .table-box { overflow-x: auto; margin-top: 15px; max-height: 480px; }
+    table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; color: #475569; position: sticky; top: 0; }
+    .badge-ok { background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>منظومة الحضور المؤمنة</h2>
-    <div id="setup">
-      <input type="text" id="courseName" placeholder="اسم المقرر أو المحاضرة">
-      <input type="number" id="radiusInput" value="30" placeholder="نطاق القاعة المسموح بالمتر">
-      <button class="btn" onclick="startLecture()">تثبيت إحداثيات القاعة وبدء العرض</button>
+
+  <!-- شاشة الدخول -->
+  <div id="loginView">
+    <div class="login-card">
+      <h2 style="margin:0 0 8px; color:var(--primary);">بوابة عضو هيئة التدريس</h2>
+      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">تسجيل الدخول لإدارة جلسات الحضور الذكية</p>
+      <input type="email" id="uEmail" class="input-field" placeholder="البريد الجامعي" value="faculty@svu.edu.eg">
+      <input type="password" id="uPass" class="input-field" placeholder="كلمة المرور" value="123456">
+      <button class="btn-main" onclick="handleLogin()">دخول لوحة التحكم</button>
     </div>
-    <div id="displayArea" style="display:none;">
-      <div id="qrWrap"></div>
-      <div class="badge">صلاحية الرمز: <span id="secTimer">10</span> ثوانٍ</div>
-      <p class="info" id="infoText"></p>
+  </div>
+
+  <!-- لوحة التحكم -->
+  <div id="dashView">
+    <header>
+      <div>
+        <h3 style="margin:0; color:var(--primary);">مرحباً د. عضو هيئة التدريس</h3>
+        <span style="font-size:12px; color:#64748b;">كلية الآداب - قسم الجغرافيا ونظم المعلومات الجغرافية</span>
+      </div>
+      <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="location.reload()">تسجيل الخروج</button>
+    </header>
+
+    <div class="main-wrap">
+      <div class="stats-bar">
+        <div class="stat-card">
+          <h4>المقرر الحالي النشط</h4>
+          <div class="val" id="activeCourseTxt" style="font-size:18px;">في الانتظار</div>
+        </div>
+        <div class="stat-card">
+          <h4>إجمالي حضور اليوم</h4>
+          <div class="val" id="attendeesCount">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>حالة النطاق الجغرافي</h4>
+          <div class="val" id="geoStatTxt" style="font-size:16px; color:var(--success);">جاهز</div>
+        </div>
+      </div>
+
+      <div class="grid-panels">
+        <!-- شاشة الـ QR -->
+        <div class="panel" style="text-align: center;">
+          <h3 style="margin-top:0;">بدء جلسة الحضور</h3>
+          <div id="setupSec">
+            <input type="text" id="courseInp" class="input-field" placeholder="اسم المقرر (مثال: نظم معلومات جغرافية)">
+            <input type="number" id="radiusInp" class="input-field" value="30" placeholder="نطاق القاعة المسموح بالمتر">
+            <button class="btn-main" onclick="startSession()">تثبيت إحداثيات القاعة وبدء العرض</button>
+          </div>
+
+          <div id="qrSec" style="display:none; margin-top:15px;">
+            <div id="qrWrap" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
+            <div style="font-size:12px; font-weight:bold; color:#d97706; background:#fef3c7; padding:4px 12px; border-radius:12px; display:inline-block;">
+              يتجدد الرمز خلال: <span id="timeSec">10</span> ثانية
+            </div>
+            <p style="font-size:12px; color:#64748b; margin-top:10px;" id="geoInfo"></p>
+          </div>
+        </div>
+
+        <!-- جدول الحضور اللحظي -->
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">كشف حضور الجلسة الحالي</h3>
+            <button class="btn-main" style="width:auto; padding:7px 15px; font-size:12px; background:#16a34a;" onclick="exportToExcel()">تصدير Excel (CSV)</button>
+          </div>
+          
+          <div class="table-box">
+            <table>
+              <thead>
+                <tr>
+                  <th>م</th>
+                  <th>اسم الطالب</th>
+                  <th>الفرقة</th>
+                  <th>المجموعة</th>
+                  <th>السكشن</th>
+                  <th>الوقت</th>
+                  <th>المسافة</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="studentTbody">
+                <tr><td colspan="8" style="color:#94a3b8;">ابدأ الجلسة لعرض بيانات الحضور...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    let lat = 0, lng = 0, radius = 30, qr = null, timer = 10;
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
 
-    function startLecture() {
-      if (!navigator.geolocation) return alert("المتصفح لا يدعم تحديد الموقع");
-      const radVal = document.getElementById("radiusInput").value;
-      if (radVal) radius = parseFloat(radVal);
+    let courseName = "";
+    let roomLat = 0, roomLng = 0, roomRadius = 30;
+    let qrEngine = null, qrTimer = 10;
+    let currentStudents = [];
 
-      navigator.geolocation.getCurrentPosition(pos => {
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-        document.getElementById("setup").style.display = "none";
-        document.getElementById("displayArea").style.display = "block";
-        document.getElementById("infoText").innerText = `نطاق القاعة: ${radius} متر | حماية منع مشاركة الروابط نشطة`;
-
-        qr = new QRCode(document.getElementById("qrWrap"), { width: 220, height: 220 });
-        updateQR();
-        setInterval(updateQR, 10000);
-        setInterval(() => {
-          timer--;
-          if (timer >= 0) document.getElementById("secTimer").innerText = timer;
-        }, 1000);
-      }, () => alert("يرجى تفعيل الـ GPS والسماح بالإذن للمتصفح"), { enableHighAccuracy: true });
+    function handleLogin() {
+      const email = document.getElementById("uEmail").value.trim();
+      const pass = document.getElementById("uPass").value.trim();
+      if (email && pass) {
+        document.getElementById("loginView").style.display = "none";
+        document.getElementById("dashView").style.display = "block";
+      }
     }
 
-    function updateQR() {
-      timer = 10;
+    function startSession() {
+      if (!navigator.geolocation) return alert("المتصفح لا يدعم الوصول لموقع الـ GPS");
+      courseName = document.getElementById("courseInp").value.trim() || "محاضرة عامة";
+      roomRadius = parseFloat(document.getElementById("radiusInp").value) || 30;
+
+      navigator.geolocation.getCurrentPosition(pos => {
+        roomLat = pos.coords.latitude;
+        roomLng = pos.coords.longitude;
+
+        document.getElementById("setupSec").style.display = "none";
+        document.getElementById("qrSec").style.display = "block";
+        document.getElementById("activeCourseTxt").innerText = courseName;
+        document.getElementById("geoStatTxt").innerText = `محدد (${roomRadius}م)`;
+        document.getElementById("geoInfo").innerText = `إحداثيات القاعة: ${roomLat.toFixed(5)}, ${roomLng.toFixed(5)}`;
+
+        qrEngine = new QRCode(document.getElementById("qrWrap"), { width: 210, height: 210 });
+        generateDynamicCode();
+        setInterval(generateDynamicCode, 10000);
+        setInterval(() => {
+          qrTimer--;
+          if (qrTimer >= 0) document.getElementById("timeSec").innerText = qrTimer;
+        }, 1000);
+
+        // المتابعة الحية لكشف الحضور كل 4 ثوانٍ
+        fetchLiveList();
+        setInterval(fetchLiveList, 4000);
+      }, () => alert("يرجى السماح بصلاحية الـ GPS في المتصفح"), { enableHighAccuracy: true });
+    }
+
+    function generateDynamicCode() {
+      qrTimer = 10;
       const token = Math.random().toString(36).substring(2, 8);
-      const ts = Date.now(); // طابع الوقت الحالي بالمللي ثانية
-      const course = encodeURIComponent(document.getElementById("courseName").value.trim() || "عام");
-
+      const ts = Date.now();
       const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-      // الرابط يحمل وقت توليده الدقيق ts
-      const url = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${lat}&lng=${lng}&r=${radius}&c=${course}`;
+      const studentUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(courseName)}`;
+      qrEngine.clear();
+      qrEngine.makeCode(studentUrl);
+    }
 
-      qr.clear();
-      qr.makeCode(url);
+    function fetchLiveList() {
+      fetch(`${SCRIPT_URL}?action=getLiveSession&course=${encodeURIComponent(courseName)}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.status === "success" && res.students) {
+            currentStudents = res.students;
+            renderAttendance();
+          }
+        }).catch(() => {});
+    }
+
+    function renderAttendance() {
+      document.getElementById("attendeesCount").innerText = currentStudents.length;
+      const tbody = document.getElementById("studentTbody");
+      if (currentStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#94a3b8;">في انتظار تسجيل أول طالب...</td></tr>';
+        return;
+      }
+      tbody.innerHTML = "";
+      currentStudents.forEach((st, i) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${st.name}</strong></td>
+            <td>${st.grade}</td>
+            <td>${st.group}</td>
+            <td>${st.section}</td>
+            <td>${st.time}</td>
+            <td>${st.distance} م</td>
+            <td><span class="badge-ok">حاضر</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    function exportToExcel() {
+      if (currentStudents.length === 0) return alert("لا توجد بيانات حضور مسجلة اليوم بعد!");
+      let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,السكشن,وقت الحضور,المسافة بالمتر\n";
+      currentStudents.forEach((s, idx) => {
+        csv += `${idx + 1},"${s.name}","${s.grade}","${s.group}","${s.section}","${s.time}",${s.distance}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `حضور_${courseName}_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
     }
   </script>
 </body>
