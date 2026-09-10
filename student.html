@@ -5,86 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل حضور الطالب</title>
   <style>
-    :root {
-      --primary: #0284c7;
-      --btn-ok: #16a34a;
-      --bg: #f8fafc;
-      --text: #0f172a;
-    }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px 15px;
-      box-sizing: border-box;
-    }
-    .box {
-      background: #fff;
-      padding: 30px 24px;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-      border: 1px solid #e2e8f0;
-    }
+    :root { --primary: #0284c7; --btn-ok: #16a34a; --bg: #f8fafc; --text: #0f172a; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 15px; box-sizing: border-box; }
+    .box { background: #fff; padding: 30px 24px; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
     h3 { margin: 0 0 8px; font-size: 20px; text-align: center; color: #1e293b; }
-    .course-badge {
-      display: block;
-      margin: 0 auto 15px;
-      width: fit-content;
-      padding: 4px 14px;
-      background: #e0f2fe;
-      color: #0369a1;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
-    }
+    .badge { display: block; margin: 0 auto 15px; width: fit-content; padding: 4px 14px; background: #e0f2fe; color: #0369a1; border-radius: 20px; font-size: 13px; font-weight: bold; }
     .form-group { margin-bottom: 14px; text-align: right; }
     label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #334155; }
-    input, select {
-      width: 100%;
-      padding: 11px 13px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-      outline: none;
-      background-color: #fff;
-      font-family: inherit;
-    }
-    input:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
-    }
+    input, select { width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; background-color: #fff; font-family: inherit; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    button {
-      width: 100%;
-      padding: 13px;
-      background: var(--btn-ok);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
-      transition: background 0.2s ease;
-    }
+    button { width: 100%; padding: 13px; background: var(--btn-ok); color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     button:disabled { background: #94a3b8; cursor: not-allowed; }
-    #status {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      display: none;
-      text-align: center;
-      line-height: 1.5;
-    }
+    #status { margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 13px; display: none; text-align: center; line-height: 1.5; }
     .danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
     .success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .info { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
@@ -93,7 +25,7 @@
 <body>
 
   <div class="box">
-    <div id="courseNameBadge" class="course-badge" style="display:none;"></div>
+    <div id="courseNameBadge" class="badge" style="display:none;"></div>
     <h3>تسجيل حضور المحاضرة</h3>
     <p style="text-align:center; font-size:13px; color:#64748b; margin-top:0; margin-bottom:18px;">
       سجل بياناتك الشخصية للتحقق من تواجدك بالقاعة
@@ -138,6 +70,7 @@
     const targetLng = parseFloat(params.get("lng"));
     const allowedRadius = parseFloat(params.get("r")) || 30;
     const courseTitle = decodeURIComponent(params.get("c") || "");
+    const lecturerEmail = decodeURIComponent(params.get("u") || "");
     const generatedTime = parseInt(params.get("ts"), 10);
 
     function showMessage(msg, type) {
@@ -153,7 +86,7 @@
       badge.style.display = "block";
     }
 
-    // التحقق من صلاحية فتح الرابط (مهلة 90 ثانية كحد أقصى للمسح من الشاشة)
+    // فحص صلاحية فتح الرابط (مهلة 90 ثانية كحد أقصى للمسح من الشاشة)
     const now = Date.now();
     const timeDiff = now - generatedTime;
     if (!generatedTime || timeDiff > 90000 || timeDiff < -30000) {
@@ -163,7 +96,6 @@
       }, 200);
     }
 
-    // بصمة الجهاز الفريدة
     function getDeviceIdentifier() {
       let dId = localStorage.getItem("student_device_uuid");
       if (!dId) {
@@ -188,17 +120,11 @@
       const section = document.getElementById("sectionNo").value.trim();
       const btn = document.getElementById("subBtn");
 
-      if (!fullName || fullName.split(" ").length < 3) {
-        return showMessage("يرجى كتابة الاسم ثلاثياً أو رباعياً على الأقل", "danger");
-      }
-      if (!grade) {
-        return showMessage("يرجى اختيار الفرقة الدراسية", "danger");
-      }
-      if (!group || !section) {
-        return showMessage("يرجى كتابة رقم المجموعة ورقم السكشن", "danger");
-      }
+      if (!fullName || fullName.split(" ").length < 3) return showMessage("يرجى كتابة الاسم ثلاثياً أو رباعياً", "danger");
+      if (!grade) return showMessage("يرجى اختيار الفرقة الدراسية", "danger");
+      if (!group || !section) return showMessage("يرجى كتابة رقم المجموعة ورقم السكشن", "danger");
 
-      const sessionKey = "registered_" + (courseTitle || "lecture");
+      const sessionKey = "reg_" + lecturerEmail + "_" + (courseTitle || "lecture");
       if (localStorage.getItem(sessionKey)) {
         return showMessage("تم تسجيل الحضور مسبقاً من هذا الجهاز لهذه المحاضرة!", "danger");
       }
@@ -226,6 +152,7 @@
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              lecturerEmail: lecturerEmail,
               studentName: fullName,
               gradeLevel: grade,
               groupNo: group,

@@ -3,87 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بوابة المحاضر | نظام الحضور الذكي</title>
+  <title>نظام إدارة الحضور الذكي | بوابة عضو هيئة التدريس</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     :root {
-      --primary: #1e3a8a;
-      --secondary: #0284c7;
+      --primary: #0284c7;
+      --navy: #0f172a;
       --success: #16a34a;
       --bg: #f8fafc;
       --card: #ffffff;
-      --text: #0f172a;
       --border: #e2e8f0;
     }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 0;
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 0; }
+    
+    /* نافذة تسجيل الدخول */
+    #loginOverlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, #0f172a, #0369a1);
+      display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
     }
-    #loginView {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .login-card {
-      background: #fff;
-      padding: 35px 30px;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      text-align: center;
-    }
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-sizing: border-box;
-      font-size: 14px;
-      font-family: inherit;
-    }
-    .btn-main {
-      width: 100%;
-      padding: 12px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .btn-main:hover { background: #172554; }
-
-    #dashView { display: none; }
-    header {
-      background: #fff;
-      border-bottom: 1px solid var(--border);
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .main-wrap { max-width: 1200px; margin: 25px auto; padding: 0 20px; }
-    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .login-box { background: #fff; padding: 35px 30px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .input-field { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    .btn-main { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-main:hover { background: #0369a1; }
+    
+    /* لوحة التحكم */
+    header { background: #fff; border-bottom: 1px solid var(--border); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-    .stat-card h4 { margin: 0 0 8px; color: #64748b; font-size: 13px; }
+    .stat-card h4 { margin: 0 0 6px; color: #64748b; font-size: 13px; }
     .stat-card .val { font-size: 24px; font-weight: bold; color: var(--primary); }
 
-    .grid-panels { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
-    @media (max-width: 900px) { .grid-panels { grid-template-columns: 1fr; } }
-    
+    .grid-dash { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+    @media (max-width: 900px) { .grid-dash { grid-template-columns: 1fr; } }
     .panel { background: #fff; border-radius: 12px; padding: 25px; border: 1px solid var(--border); }
-    .table-box { overflow-x: auto; margin-top: 15px; max-height: 480px; }
+    .table-wrap { overflow-x: auto; margin-top: 15px; max-height: 480px; }
     table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
     th, td { padding: 10px; border-bottom: 1px solid var(--border); }
     th { background: #f8fafc; color: #475569; position: sticky; top: 0; }
@@ -92,88 +47,87 @@
 </head>
 <body>
 
-  <!-- شاشة الدخول -->
-  <div id="loginView">
-    <div class="login-card">
-      <h2 style="margin:0 0 8px; color:var(--primary);">بوابة عضو هيئة التدريس</h2>
-      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">تسجيل الدخول لإدارة جلسات الحضور الذكية</p>
-      <input type="email" id="uEmail" class="input-field" placeholder="البريد الجامعي" value="faculty@svu.edu.eg">
-      <input type="password" id="uPass" class="input-field" placeholder="كلمة المرور" value="123456">
-      <button class="btn-main" onclick="handleLogin()">دخول لوحة التحكم</button>
+  <!-- نافذة الدخول الإلزامية للتحقق من الحساب -->
+  <div id="loginOverlay">
+    <div class="login-box">
+      <h2 style="margin:0 0 8px; color:var(--primary);">تسجيل الدخول الأكاديمي</h2>
+      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">الدخول مقتصر على الحسابات المصرح لها في النظام</p>
+      <input type="email" id="authEmail" class="input-field" placeholder="البريد الجامعي" value="waleed@art.svu.edu.eg">
+      <input type="password" id="authPass" class="input-field" placeholder="كلمة المرور" value="123456">
+      <button class="btn-main" id="loginBtn" onclick="processLogin()">تحقق ودخول</button>
+      <div id="loginMsg" style="color:#dc2626; font-size:13px; margin-top:12px; display:none;"></div>
     </div>
   </div>
 
-  <!-- لوحة التحكم -->
-  <div id="dashView">
-    <header>
-      <div>
-        <h3 style="margin:0; color:var(--primary);">مرحباً د. عضو هيئة التدريس</h3>
-        <span style="font-size:12px; color:#64748b;">كلية الآداب - قسم الجغرافيا ونظم المعلومات الجغرافية</span>
+  <!-- لوحة التحكم الفعلية -->
+  <header>
+    <div>
+      <h3 style="margin:0; color:var(--primary);" id="displayProfName">د. عضو هيئة التدريس</h3>
+      <span style="font-size:12px; color:#64748b;" id="displayProfDept">قسم الجغرافيا ونظم المعلومات الجغرافية</span>
+    </div>
+    <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="logout()">تسجيل الخروج</button>
+  </header>
+
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-card">
+        <h4>المقرر النشط حالياً</h4>
+        <div class="val" id="courseLabel" style="font-size:18px;">لم تبدأ الجلسة</div>
       </div>
-      <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="location.reload()">تسجيل الخروج</button>
-    </header>
+      <div class="stat-card">
+        <h4>حضور جلستك اليوم</h4>
+        <div class="val" id="liveCounter">0</div>
+      </div>
+      <div class="stat-card">
+        <h4>حالة النطاق الجغرافي</h4>
+        <div class="val" id="geoStatus" style="font-size:16px; color:var(--success);">بانتظار البدء</div>
+      </div>
+    </div>
 
-    <div class="main-wrap">
-      <div class="stats-bar">
-        <div class="stat-card">
-          <h4>المقرر الحالي النشط</h4>
-          <div class="val" id="activeCourseTxt" style="font-size:18px;">في الانتظار</div>
+    <div class="grid-dash">
+      <!-- توليد الـ QR -->
+      <div class="panel" style="text-align: center;">
+        <h3 style="margin-top:0;">إنشاء الجلسة ورمز الحضور</h3>
+        <div id="sessionInputs">
+          <input type="text" id="courseTitleInp" class="input-field" placeholder="اسم المقرر (مثال: تحليل مكاني)">
+          <input type="number" id="radiusInp" class="input-field" value="30" placeholder="نطاق القاعة بالمتر">
+          <button class="btn-main" onclick="startLiveLecture()">تثبيت موقع القاعة وبدء العرض</button>
         </div>
-        <div class="stat-card">
-          <h4>إجمالي حضور اليوم</h4>
-          <div class="val" id="attendeesCount">0</div>
-        </div>
-        <div class="stat-card">
-          <h4>حالة النطاق الجغرافي</h4>
-          <div class="val" id="geoStatTxt" style="font-size:16px; color:var(--success);">جاهز</div>
+
+        <div id="qrArea" style="display:none; margin-top:15px;">
+          <div id="qrCodeContainer" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
+          <div style="font-size:12px; font-weight:bold; color:#d97706; background:#fef3c7; padding:4px 12px; border-radius:12px; display:inline-block;">
+            يتجدد الرمز خلال: <span id="timerTxt">10</span> ثوانٍ
+          </div>
+          <p style="font-size:12px; color:#64748b; margin-top:10px;" id="roomCoords"></p>
         </div>
       </div>
 
-      <div class="grid-panels">
-        <!-- شاشة الـ QR -->
-        <div class="panel" style="text-align: center;">
-          <h3 style="margin-top:0;">بدء جلسة الحضور</h3>
-          <div id="setupSec">
-            <input type="text" id="courseInp" class="input-field" placeholder="اسم المقرر (مثال: نظم معلومات جغرافية)">
-            <input type="number" id="radiusInp" class="input-field" value="30" placeholder="نطاق القاعة المسموح بالمتر">
-            <button class="btn-main" onclick="startSession()">تثبيت إحداثيات القاعة وبدء العرض</button>
-          </div>
-
-          <div id="qrSec" style="display:none; margin-top:15px;">
-            <div id="qrWrap" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
-            <div style="font-size:12px; font-weight:bold; color:#d97706; background:#fef3c7; padding:4px 12px; border-radius:12px; display:inline-block;">
-              يتجدد الرمز خلال: <span id="timeSec">10</span> ثانية
-            </div>
-            <p style="font-size:12px; color:#64748b; margin-top:10px;" id="geoInfo"></p>
-          </div>
+      <!-- جدول الحضور المباشر للدكتور الحالي فقط -->
+      <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0;">كشف حضور الطلاب المسجلين</h3>
+          <button class="btn-main" style="width:auto; padding:7px 15px; font-size:12px; background:#16a34a;" onclick="exportCSV()">تصدير Excel</button>
         </div>
 
-        <!-- جدول الحضور اللحظي -->
-        <div class="panel">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">كشف حضور الجلسة الحالي</h3>
-            <button class="btn-main" style="width:auto; padding:7px 15px; font-size:12px; background:#16a34a;" onclick="exportToExcel()">تصدير Excel (CSV)</button>
-          </div>
-          
-          <div class="table-box">
-            <table>
-              <thead>
-                <tr>
-                  <th>م</th>
-                  <th>اسم الطالب</th>
-                  <th>الفرقة</th>
-                  <th>المجموعة</th>
-                  <th>السكشن</th>
-                  <th>الوقت</th>
-                  <th>المسافة</th>
-                  <th>الحالة</th>
-                </tr>
-              </thead>
-              <tbody id="studentTbody">
-                <tr><td colspan="8" style="color:#94a3b8;">ابدأ الجلسة لعرض بيانات الحضور...</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>م</th>
+                <th>اسم الطالب</th>
+                <th>الفرقة</th>
+                <th>المجموعة</th>
+                <th>السكشن</th>
+                <th>وقت التسجيل</th>
+                <th>المسافة</th>
+                <th>الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="studentRows">
+              <tr><td colspan="8" style="color:#94a3b8;">ابدأ الجلسة لعرض بيانات الحضور اللحظية...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -182,82 +136,126 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
 
-    let courseName = "";
+    let activeUser = JSON.parse(sessionStorage.getItem("auth_user") || "null");
+    let currentCourse = "";
     let roomLat = 0, roomLng = 0, roomRadius = 30;
-    let qrEngine = null, qrTimer = 10;
-    let currentStudents = [];
+    let qrGenerator = null, countdown = 10;
+    let attendees = [];
 
-    function handleLogin() {
-      const email = document.getElementById("uEmail").value.trim();
-      const pass = document.getElementById("uPass").value.trim();
-      if (email && pass) {
-        document.getElementById("loginView").style.display = "none";
-        document.getElementById("dashView").style.display = "block";
+    // التحقق عند تحميل الصفحة
+    window.onload = function() {
+      if (activeUser) {
+        document.getElementById("loginOverlay").style.display = "none";
+        document.getElementById("displayProfName").innerText = activeUser.name;
+        document.getElementById("displayProfDept").innerText = activeUser.dept;
       }
+    };
+
+    function processLogin() {
+      const email = document.getElementById("authEmail").value.trim();
+      const pass = document.getElementById("authPass").value.trim();
+      const btn = document.getElementById("loginBtn");
+      const msg = document.getElementById("loginMsg");
+
+      btn.disabled = true;
+      btn.innerText = "جاري التحقق من الخادم...";
+      msg.style.display = "none";
+
+      fetch(`${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`)
+        .then(r => r.json())
+        .then(res => {
+          btn.disabled = false;
+          btn.innerText = "تحقق ودخول";
+          if (res.status === "success") {
+            activeUser = res.user;
+            sessionStorage.setItem("auth_user", JSON.stringify(activeUser));
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("displayProfName").innerText = activeUser.name;
+            document.getElementById("displayProfDept").innerText = activeUser.dept;
+          } else {
+            msg.innerText = res.message || "بيانات الدخول غير صحيحة";
+            msg.style.display = "block";
+          }
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.innerText = "تحقق ودخول";
+          msg.innerText = "تعذر الاتصال بالخادم، تحقق من الإنترنت";
+          msg.style.display = "block";
+        });
     }
 
-    function startSession() {
+    function logout() {
+      sessionStorage.removeItem("auth_user");
+      location.reload();
+    }
+
+    function startLiveLecture() {
       if (!navigator.geolocation) return alert("المتصفح لا يدعم الوصول لموقع الـ GPS");
-      courseName = document.getElementById("courseInp").value.trim() || "محاضرة عامة";
+      currentCourse = document.getElementById("courseTitleInp").value.trim() || "محاضرة عامة";
       roomRadius = parseFloat(document.getElementById("radiusInp").value) || 30;
 
       navigator.geolocation.getCurrentPosition(pos => {
         roomLat = pos.coords.latitude;
         roomLng = pos.coords.longitude;
 
-        document.getElementById("setupSec").style.display = "none";
-        document.getElementById("qrSec").style.display = "block";
-        document.getElementById("activeCourseTxt").innerText = courseName;
-        document.getElementById("geoStatTxt").innerText = `محدد (${roomRadius}م)`;
-        document.getElementById("geoInfo").innerText = `إحداثيات القاعة: ${roomLat.toFixed(5)}, ${roomLng.toFixed(5)}`;
+        document.getElementById("sessionInputs").style.display = "none";
+        document.getElementById("qrArea").style.display = "block";
+        document.getElementById("courseLabel").innerText = currentCourse;
+        document.getElementById("geoStatus").innerText = `محدد (${roomRadius}م)`;
+        document.getElementById("roomCoords").innerText = `إحداثيات القاعة: ${roomLat.toFixed(5)}, ${roomLng.toFixed(5)}`;
 
-        qrEngine = new QRCode(document.getElementById("qrWrap"), { width: 210, height: 210 });
-        generateDynamicCode();
-        setInterval(generateDynamicCode, 10000);
+        qrGenerator = new QRCode(document.getElementById("qrCodeContainer"), { width: 210, height: 210 });
+        refreshCode();
+        setInterval(refreshCode, 10000);
         setInterval(() => {
-          qrTimer--;
-          if (qrTimer >= 0) document.getElementById("timeSec").innerText = qrTimer;
+          countdown--;
+          if (countdown >= 0) document.getElementById("timerTxt").innerText = countdown;
         }, 1000);
 
-        // المتابعة الحية لكشف الحضور كل 4 ثوانٍ
-        fetchLiveList();
-        setInterval(fetchLiveList, 4000);
-      }, () => alert("يرجى السماح بصلاحية الـ GPS في المتصفح"), { enableHighAccuracy: true });
+        // سحب وتحديث كشف الحضور اللحظي كل 4 ثوانٍ
+        pullAttendees();
+        setInterval(pullAttendees, 4000);
+      }, () => alert("يرجى إعطاء صلاحية الـ GPS"), { enableHighAccuracy: true });
     }
 
-    function generateDynamicCode() {
-      qrTimer = 10;
+    function refreshCode() {
+      countdown = 10;
       const token = Math.random().toString(36).substring(2, 8);
       const ts = Date.now();
       const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-      const studentUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(courseName)}`;
-      qrEngine.clear();
-      qrEngine.makeCode(studentUrl);
+      
+      // نرسل بريد المحاضر المشرف داخل الرابط لربط تسجيل الطالب به تلقائياً
+      const targetUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(currentCourse)}&u=${encodeURIComponent(activeUser.email)}`;
+      
+      qrGenerator.clear();
+      qrGenerator.makeCode(targetUrl);
     }
 
-    function fetchLiveList() {
-      fetch(`${SCRIPT_URL}?action=getLiveSession&course=${encodeURIComponent(courseName)}`)
+    // سحب حضور المحاضر الحالي فقط
+    function pullAttendees() {
+      fetch(`${SCRIPT_URL}?action=getLiveSession&lecturerEmail=${encodeURIComponent(activeUser.email)}&course=${encodeURIComponent(currentCourse)}`)
         .then(r => r.json())
         .then(res => {
           if (res.status === "success" && res.students) {
-            currentStudents = res.students;
-            renderAttendance();
+            attendees = res.students;
+            renderTable();
           }
         }).catch(() => {});
     }
 
-    function renderAttendance() {
-      document.getElementById("attendeesCount").innerText = currentStudents.length;
-      const tbody = document.getElementById("studentTbody");
-      if (currentStudents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="color:#94a3b8;">في انتظار تسجيل أول طالب...</td></tr>';
+    function renderTable() {
+      document.getElementById("liveCounter").innerText = attendees.length;
+      const tbody = document.getElementById("studentRows");
+      if (attendees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#94a3b8;">في انتظار تسجيل أول طالب داخل القاعة...</td></tr>';
         return;
       }
       tbody.innerHTML = "";
-      currentStudents.forEach((st, i) => {
+      attendees.forEach((st, idx) => {
         tbody.innerHTML += `
           <tr>
-            <td>${i + 1}</td>
+            <td>${idx + 1}</td>
             <td><strong>${st.name}</strong></td>
             <td>${st.grade}</td>
             <td>${st.group}</td>
@@ -270,16 +268,16 @@
       });
     }
 
-    function exportToExcel() {
-      if (currentStudents.length === 0) return alert("لا توجد بيانات حضور مسجلة اليوم بعد!");
+    function exportCSV() {
+      if (attendees.length === 0) return alert("لا توجد بيانات مسجلة حالياً للتصدير");
       let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,السكشن,وقت الحضور,المسافة بالمتر\n";
-      currentStudents.forEach((s, idx) => {
-        csv += `${idx + 1},"${s.name}","${s.grade}","${s.group}","${s.section}","${s.time}",${s.distance}\n`;
+      attendees.forEach((s, i) => {
+        csv += `${i+1},"${s.name}","${s.grade}","${s.group}","${s.section}","${s.time}",${s.distance}\n`;
       });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `حضور_${courseName}_${new Date().toISOString().slice(0,10)}.csv`;
+      a.download = `حضور_${currentCourse}_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
     }
   </script>
