@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>نظام إدارة الحضور الذكي | بوابة عضو هيئة التدريس</title>
+  <title>نظام إدارة الحضور الذكي | بوابة المحاضر</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     :root {
@@ -13,58 +13,161 @@
       --bg: #f8fafc;
       --border: #e2e8f0;
     }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+    }
     
     /* نافذة تسجيل الدخول */
     #loginOverlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: linear-gradient(135deg, #0f172a, #0369a1);
-      display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
     }
-    .login-box { background: #fff; padding: 35px 30px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-    .input-field { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-    .btn-main { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .login-box {
+      background: #fff;
+      padding: 35px 30px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .btn-main {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
     .btn-main:hover { background: #0369a1; }
     
-    /* لوحة التحكم */
-    header { background: #fff; border-bottom: 1px solid var(--border); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-    .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; }
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .stat-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-    .stat-card h4 { margin: 0 0 6px; color: #64748b; font-size: 13px; }
-    .stat-card .val { font-size: 24px; font-weight: bold; color: var(--primary); }
+    /* لوحة التحكم الرئيسية */
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 25px auto;
+      padding: 0 20px;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .stat-card h4 {
+      margin: 0 0 6px;
+      color: #64748b;
+      font-size: 13px;
+    }
+    .stat-card .val {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+    }
 
-    .grid-dash { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
-    @media (max-width: 900px) { .grid-dash { grid-template-columns: 1fr; } }
-    .panel { background: #fff; border-radius: 12px; padding: 25px; border: 1px solid var(--border); }
-    .table-wrap { overflow-x: auto; margin-top: 15px; max-height: 480px; }
-    table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
-    th, td { padding: 10px; border-bottom: 1px solid var(--border); }
-    th { background: #f8fafc; color: #475569; position: sticky; top: 0; }
-    .badge-ok { background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .grid-dash {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid-dash { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 25px;
+      border: 1px solid var(--border);
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 15px;
+      max-height: 480px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f8fafc;
+      color: #475569;
+      position: sticky;
+      top: 0;
+    }
+    .badge-ok {
+      background: #dcfce7;
+      color: #166534;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- نافذة تسجيل الدخول للمحاضر -->
+  <!-- شاشة الدخول الإلزامية -->
   <div id="loginOverlay">
     <div class="login-box">
       <h2 style="margin:0 0 8px; color:var(--primary);">تسجيل الدخول الأكاديمي</h2>
-      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">الدخول مقتصر على الحسابات المصرح لها في النظام</p>
-      <input type="email" id="authEmail" class="input-field" placeholder="البريد الجامعي" value="waleed@art.svu.edu.eg">
+      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">الدخول مقتصر على الحسابات المصرح لها</p>
+      <input type="email" id="authEmail" class="input-field" placeholder="البريد الأكاديمي" value="waleed@art.svu.edu.eg">
       <input type="password" id="authPass" class="input-field" placeholder="كلمة المرور" value="123456">
       <button class="btn-main" id="loginBtn" onclick="processLogin()">تحقق ودخول</button>
       <div id="loginMsg" style="color:#dc2626; font-size:13px; margin-top:12px; display:none;"></div>
     </div>
   </div>
 
-  <!-- واجهة لوحة المحاضر -->
+  <!-- الشريط العلوي للوحة التحكم -->
   <header>
     <div>
       <h3 style="margin:0; color:var(--primary);" id="displayProfName">د. عضو هيئة التدريس</h3>
       <span style="font-size:12px; color:#64748b;" id="displayProfDept">قسم الجغرافيا ونظم المعلومات الجغرافية</span>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div style="display:flex; gap:10px; align-items:center;">
       <a href="courses.html" style="text-decoration:none; padding:7px 14px; background:#f1f5f9; border-radius:6px; font-size:12px; font-weight:bold; color:#334155;">المقررات</a>
       <a href="reports.html" style="text-decoration:none; padding:7px 14px; background:#f1f5f9; border-radius:6px; font-size:12px; font-weight:bold; color:#334155;">التقارير</a>
       <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="logout()">خروج</button>
@@ -78,7 +181,7 @@
         <div class="val" id="courseLabel" style="font-size:18px;">لم تبدأ الجلسة</div>
       </div>
       <div class="stat-card">
-        <h4>حضور جلستك اليوم</h4>
+        <h4>إجمالي حضور الجلسة</h4>
         <div class="val" id="liveCounter">0</div>
       </div>
       <div class="stat-card">
@@ -88,11 +191,11 @@
     </div>
 
     <div class="grid-dash">
-      <!-- إنشاء الجلسة ورمز الحضور -->
+      <!-- لوحة إنشاء الجلسة والـ QR -->
       <div class="panel" style="text-align: center;">
         <h3 style="margin-top:0;">إنشاء الجلسة ورمز الحضور</h3>
         <div id="sessionInputs">
-          <input type="text" id="courseTitleInp" class="input-field" placeholder="اسم المقرر (مثال: تحليل مكاني)">
+          <input type="text" id="courseTitleInp" class="input-field" placeholder="اسم المقرر (مثال: نظم معلومات جغرافية)">
           <input type="number" id="radiusInp" class="input-field" value="30" placeholder="نطاق القاعة بالمتر">
           <button class="btn-main" onclick="startLiveLecture()">تثبيت موقع القاعة وبدء العرض</button>
         </div>
@@ -106,7 +209,7 @@
         </div>
       </div>
 
-      <!-- كشف حضور الطلاب المباشر -->
+      <!-- جدول كشف الحضور اللحظي -->
       <div class="panel">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <h3 style="margin:0;">كشف حضور الطلاب المسجلين</h3>
@@ -144,6 +247,7 @@
     let roomLat = 0, roomLng = 0, roomRadius = 30;
     let qrGenerator = null, countdown = 10;
     let attendees = [];
+    let isFetching = false;
 
     window.onload = function() {
       if (activeUser) {
@@ -153,39 +257,46 @@
       }
     };
 
-    // تسجيل الدخول عبر تقنية JSONP لضمان الاستجابة الفورية
     function processLogin() {
       const email = document.getElementById("authEmail").value.trim();
       const pass = document.getElementById("authPass").value.trim();
       const btn = document.getElementById("loginBtn");
       const msg = document.getElementById("loginMsg");
 
+      if (!email || !pass) {
+        msg.innerText = "يرجى كتابة البريد وكلمة المرور";
+        msg.style.display = "block";
+        return;
+      }
+
       btn.disabled = true;
-      btn.innerText = "جاري التحقق من الخادم...";
+      btn.innerText = "جاري التحقق...";
       msg.style.display = "none";
 
-      const cb = "cb_login_" + Date.now();
-      const s = document.createElement("script");
+      const url = `${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}&_t=${Date.now()}`;
 
-      window[cb] = function(res) {
-        btn.disabled = false;
-        btn.innerText = "تحقق ودخول";
-        if (res.status === "success") {
-          activeUser = res.user;
-          sessionStorage.setItem("auth_user", JSON.stringify(activeUser));
-          document.getElementById("loginOverlay").style.display = "none";
-          document.getElementById("displayProfName").innerText = activeUser.name;
-          document.getElementById("displayProfDept").innerText = activeUser.dept;
-        } else {
-          msg.innerText = res.message || "بيانات الدخول غير صحيحة";
+      fetch(url)
+        .then(res => res.json())
+        .then(res => {
+          btn.disabled = false;
+          btn.innerText = "تحقق ودخول";
+          if (res.status === "success") {
+            activeUser = res.user;
+            sessionStorage.setItem("auth_user", JSON.stringify(activeUser));
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("displayProfName").innerText = activeUser.name;
+            document.getElementById("displayProfDept").innerText = activeUser.dept;
+          } else {
+            msg.innerText = res.message || "بيانات الدخول غير صحيحة";
+            msg.style.display = "block";
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerText = "تحقق ودخول";
+          msg.innerText = "تعذر الاتصال بالسيرفر، تحقق من الإنترنت";
           msg.style.display = "block";
-        }
-        delete window[cb];
-        document.body.removeChild(s);
-      };
-
-      s.src = `${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}&callback=${cb}`;
-      document.body.appendChild(s);
+        });
     }
 
     function logout() {
@@ -195,7 +306,7 @@
 
     function startLiveLecture() {
       if (!navigator.geolocation) return alert("المتصفح لا يدعم الوصول لموقع الـ GPS");
-      currentCourse = document.getElementById("courseTitleInp").value.trim() || "محاضرة عامة";
+      currentCourse = (document.getElementById("courseTitleInp").value || "محاضرة عامة").trim();
       roomRadius = parseFloat(document.getElementById("radiusInp").value) || 30;
 
       navigator.geolocation.getCurrentPosition(pos => {
@@ -219,7 +330,7 @@
         // جلب وتحديث كشف الحضور اللحظي كل ثانيتين ونصف
         pullAttendees();
         setInterval(pullAttendees, 2500);
-      }, () => alert("يرجى إعطاء صلاحية الـ GPS"), { enableHighAccuracy: true });
+      }, () => alert("يرجى إعطاء صلاحية الوصول للـ GPS"), { enableHighAccuracy: true });
     }
 
     function refreshCode() {
@@ -228,30 +339,32 @@
       const ts = Date.now();
       const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
       
-      const targetUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(currentCourse)}&u=${encodeURIComponent(activeUser.email)}`;
+      const cleanCourse = currentCourse.trim();
+      const targetUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(cleanCourse)}&u=${encodeURIComponent(activeUser.email)}`;
       
       qrGenerator.clear();
       qrGenerator.makeCode(targetUrl);
     }
 
-    // جلب الحضور اللحظي عبر JSONP الموثوق به دون تعليق CORS
     function pullAttendees() {
-      if (!activeUser || !currentCourse) return;
+      if (!activeUser || !currentCourse || isFetching) return;
+      isFetching = true;
 
-      const cb = "cb_pull_" + Date.now();
-      const s = document.createElement("script");
+      const url = `${SCRIPT_URL}?action=getLiveSession&lecturerEmail=${encodeURIComponent(activeUser.email)}&course=${encodeURIComponent(currentCourse)}&_t=${Date.now()}`;
 
-      window[cb] = function(res) {
-        if (res.status === "success" && res.students) {
-          attendees = res.students;
-          renderTable();
-        }
-        delete window[cb];
-        document.body.removeChild(s);
-      };
-
-      s.src = `${SCRIPT_URL}?action=getLiveSession&lecturerEmail=${encodeURIComponent(activeUser.email)}&course=${encodeURIComponent(currentCourse)}&callback=${cb}`;
-      document.body.appendChild(s);
+      fetch(url)
+        .then(res => res.json())
+        .then(res => {
+          isFetching = false;
+          if (res && res.status === "success" && Array.isArray(res.students)) {
+            attendees = res.students;
+            renderTable();
+          }
+        })
+        .catch(err => {
+          isFetching = false;
+          console.error("خطأ أثناء جلب الحضور اللحظي:", err);
+        });
     }
 
     function renderTable() {
