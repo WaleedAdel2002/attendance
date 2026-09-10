@@ -8,19 +8,26 @@
   <style>
     :root {
       --primary: #0284c7;
+      --primary-dark: #0369a1;
       --navy: #0f172a;
       --success: #16a34a;
+      --success-dark: #15803d;
+      --danger: #dc2626;
       --bg: #f8fafc;
+      --card-bg: #ffffff;
       --border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
     }
+
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
-      color: #1e293b;
+      color: var(--text-main);
       margin: 0;
       padding: 0;
     }
-    
+
     /* نافذة تسجيل الدخول */
     #loginOverlay {
       position: fixed;
@@ -29,7 +36,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
+      z-index: 2000;
       padding: 20px;
     }
     .login-box {
@@ -39,7 +46,7 @@
       width: 100%;
       max-width: 400px;
       text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
     }
     .input-field {
       width: 100%;
@@ -62,64 +69,183 @@
       cursor: pointer;
       font-size: 14px;
       transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    .btn-main:hover { background: #0369a1; }
-    
-    /* لوحة التحكم الرئيسية */
+    .btn-main:hover { background: var(--primary-dark); }
+
+    /* شريط الترويسة العلوي */
     header {
       background: #fff;
       border-bottom: 1px solid var(--border);
-      padding: 15px 30px;
+      padding: 14px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
     }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #e0f2fe;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .nav-btn {
+      text-decoration: none;
+      padding: 8px 14px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #cbd5e1;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .nav-btn:hover {
+      background: #e2e8f0;
+      color: var(--navy);
+    }
+    .nav-btn-danger {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
+    }
+    .nav-btn-danger:hover {
+      background: #fecaca;
+    }
+
     .container {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 25px auto;
       padding: 0 20px;
     }
+
+    /* بطاقات الإحصائيات السريعة */
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
       margin-bottom: 25px;
     }
     .stat-card {
       background: #fff;
       padding: 20px;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
     .stat-card h4 {
       margin: 0 0 6px;
-      color: #64748b;
+      color: var(--text-muted);
       font-size: 13px;
     }
     .stat-card .val {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: bold;
       color: var(--primary);
     }
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
+    /* شبكة لوحة التحكم */
     .grid-dash {
       display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 20px;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 950px) {
       .grid-dash { grid-template-columns: 1fr; }
     }
     .panel {
       background: #fff;
-      border-radius: 12px;
-      padding: 25px;
+      border-radius: 14px;
+      padding: 24px;
       border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
+
+    /* منطقة الـ QR كود */
+    .qr-box-wrapper {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 15px;
+      position: relative;
+    }
+    .qr-timer-pill {
+      font-size: 12px;
+      font-weight: bold;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      border: 1px solid #fde68a;
+    }
+    .btn-fullscreen {
+      margin-top: 14px;
+      padding: 9px 16px;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-fullscreen:hover { background: #1e293b; }
+
+    /* كشف الحضور والجدول */
     .table-wrap {
       overflow-x: auto;
       margin-top: 15px;
-      max-height: 480px;
+      max-height: 490px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
     }
     table {
       width: 100%;
@@ -128,7 +254,7 @@
       font-size: 13px;
     }
     th, td {
-      padding: 10px;
+      padding: 12px 10px;
       border-bottom: 1px solid var(--border);
     }
     th {
@@ -136,84 +262,206 @@
       color: #475569;
       position: sticky;
       top: 0;
+      z-index: 10;
     }
     .badge-ok {
       background: #dcfce7;
       color: #166534;
-      padding: 3px 8px;
-      border-radius: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
       font-weight: bold;
       font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* نافذة ملء الشاشة للـ QR */
+    #fullscreenModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0f172a;
+      z-index: 3000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+      box-sizing: border-box;
+    }
+    #fullscreenModal.active {
+      display: flex;
+    }
+    .fs-card {
+      background: #ffffff;
+      padding: 35px 45px;
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+      max-width: 90vw;
+    }
+    .fs-close-btn {
+      position: absolute;
+      top: 25px;
+      left: 25px;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .fs-close-btn:hover { background: rgba(255,255,255,0.25); }
+    .fs-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--navy);
+      margin: 0 0 10px;
+    }
+    .fs-meta {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
 
-  <!-- شاشة الدخول الإلزامية -->
+  <!-- 1. نافذة تسجيل الدخول للأستاذ -->
   <div id="loginOverlay">
     <div class="login-box">
+      <div style="width:50px; height:50px; margin:0 auto 12px; background:#e0f2fe; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--primary);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+      </div>
       <h2 style="margin:0 0 8px; color:var(--primary);">تسجيل الدخول الأكاديمي</h2>
-      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">الدخول مقتصر على الحسابات المصرح لها</p>
+      <p style="color:#64748b; font-size:13px; margin-bottom:20px;">الدخول مقتصر على الحسابات المصرح لها في النظام</p>
       <input type="email" id="authEmail" class="input-field" placeholder="البريد الأكاديمي" value="waleed@art.svu.edu.eg">
       <input type="password" id="authPass" class="input-field" placeholder="كلمة المرور" value="123456">
-      <button class="btn-main" id="loginBtn" onclick="processLogin()">تحقق ودخول</button>
+      <button class="btn-main" id="loginBtn" onclick="processLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        تحقق ودخول
+      </button>
       <div id="loginMsg" style="color:#dc2626; font-size:13px; margin-top:12px; display:none;"></div>
     </div>
   </div>
 
-  <!-- الشريط العلوي للوحة التحكم -->
+  <!-- 2. الشريط العلوي وأزرار التنقل -->
   <header>
-    <div>
-      <h3 style="margin:0; color:var(--primary);" id="displayProfName">د. عضو هيئة التدريس</h3>
-      <span style="font-size:12px; color:#64748b;" id="displayProfDept">قسم الجغرافيا ونظم المعلومات الجغرافية</span>
+    <div class="header-user">
+      <div class="user-avatar" id="avatarLetter">م</div>
+      <div>
+        <h3 style="margin:0; font-size:16px; color:var(--navy);" id="displayProfName">د. عضو هيئة التدريس</h3>
+        <span style="font-size:12px; color:var(--text-muted);" id="displayProfDept">قسم الجغرافيا ونظم المعلومات الجغرافية</span>
+      </div>
     </div>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <a href="courses.html" style="text-decoration:none; padding:7px 14px; background:#f1f5f9; border-radius:6px; font-size:12px; font-weight:bold; color:#334155;">المقررات</a>
-      <a href="reports.html" style="text-decoration:none; padding:7px 14px; background:#f1f5f9; border-radius:6px; font-size:12px; font-weight:bold; color:#334155;">التقارير</a>
-      <button style="background:#fee2e2; color:#991b1b; border:none; padding:7px 15px; border-radius:6px; cursor:pointer; font-weight:bold;" onclick="logout()">خروج</button>
+
+    <div class="nav-actions">
+      <!-- زر المقررات -->
+      <a href="courses.html" class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        المقررات
+      </a>
+
+      <!-- زر التقارير -->
+      <a href="reports.html" class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        التقارير التراكمية
+      </a>
+
+      <!-- زر استيراد الطلاب -->
+      <a href="import.html" class="nav-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        استيراد الطلاب
+      </a>
+
+      <!-- زر خروج -->
+      <button class="nav-btn nav-btn-danger" onclick="logout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        خروج
+      </button>
     </div>
   </header>
 
   <div class="container">
+    <!-- بطاقات الإحصائيات -->
     <div class="stats-row">
       <div class="stat-card">
-        <h4>المقرر النشط حالياً</h4>
-        <div class="val" id="courseLabel" style="font-size:18px;">لم تبدأ الجلسة</div>
+        <div>
+          <h4>المقرر النشط حالياً</h4>
+          <div class="val" id="courseLabel" style="font-size:18px;">لم تبدأ الجلسة</div>
+        </div>
+        <div class="stat-icon" style="background:#e0f2fe; color:var(--primary);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
       </div>
+
       <div class="stat-card">
-        <h4>إجمالي حضور الجلسة</h4>
-        <div class="val" id="liveCounter">0</div>
+        <div>
+          <h4>إجمالي حضور الجلسة</h4>
+          <div class="val" id="liveCounter">0</div>
+        </div>
+        <div class="stat-icon" style="background:#dcfce7; color:var(--success);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
       </div>
+
       <div class="stat-card">
-        <h4>حالة النطاق الجغرافي</h4>
-        <div class="val" id="geoStatus" style="font-size:16px; color:var(--success);">بانتظار البدء</div>
+        <div>
+          <h4>حالة النطاق الجغرافي</h4>
+          <div class="val" id="geoStatus" style="font-size:16px; color:var(--success);">بانتظار البدء</div>
+        </div>
+        <div class="stat-icon" style="background:#fef3c7; color:#d97706;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
       </div>
     </div>
 
+    <!-- المحتوى الرئيسي -->
     <div class="grid-dash">
       <!-- لوحة إنشاء الجلسة والـ QR -->
       <div class="panel" style="text-align: center;">
-        <h3 style="margin-top:0;">إنشاء الجلسة ورمز الحضور</h3>
+        <h3 style="margin-top:0; color:var(--navy);">إنشاء الجلسة ورمز الحضور</h3>
+        
         <div id="sessionInputs">
           <input type="text" id="courseTitleInp" class="input-field" placeholder="اسم المقرر (مثال: نظم معلومات جغرافية)">
           <input type="number" id="radiusInp" class="input-field" value="30" placeholder="نطاق القاعة بالمتر">
-          <button class="btn-main" onclick="startLiveLecture()">تثبيت موقع القاعة وبدء العرض</button>
+          <button class="btn-main" onclick="startLiveLecture()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            تثبيت موقع القاعة وبدء العرض
+          </button>
         </div>
 
-        <div id="qrArea" style="display:none; margin-top:15px;">
-          <div id="qrCodeContainer" style="display:flex; justify-content:center; margin-bottom:12px;"></div>
-          <div style="font-size:12px; font-weight:bold; color:#d97706; background:#fef3c7; padding:4px 12px; border-radius:12px; display:inline-block;">
-            يتجدد الرمز خلال: <span id="timerTxt">10</span> ثوانٍ
+        <div id="qrArea" style="display:none;">
+          <div class="qr-box-wrapper">
+            <div id="qrCodeContainer"></div>
+            <div class="qr-timer-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              يتجدد الرمز خلال: <span id="timerTxt">10</span> ثوانٍ
+            </div>
           </div>
-          <p style="font-size:12px; color:#64748b; margin-top:10px;" id="roomCoords"></p>
+
+          <button class="btn-fullscreen" onclick="openFullscreenQR()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            تكبير الـ QR بملء الشاشة (بروجكتور)
+          </button>
+
+          <p style="font-size:12px; color:var(--text-muted); margin-top:12px;" id="roomCoords"></p>
         </div>
       </div>
 
-      <!-- جدول كشف الحضور اللحظي -->
+      <!-- كشف الحضور اللحظي وتصدير Excel -->
       <div class="panel">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3 style="margin:0;">كشف حضور الطلاب المسجلين</h3>
-          <button class="btn-main" style="width:auto; padding:7px 15px; font-size:12px; background:#16a34a;" onclick="exportCSV()">تصدير Excel</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <h3 style="margin:0; color:var(--navy);">كشف حضور الطلاب المسجلين</h3>
+          <button class="btn-main" style="width:auto; padding:8px 16px; font-size:13px; background:var(--success);" onclick="exportCSV()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            تصدير Excel (CSV)
+          </button>
         </div>
 
         <div class="table-wrap">
@@ -231,7 +479,7 @@
               </tr>
             </thead>
             <tbody id="studentRows">
-              <tr><td colspan="8" style="color:#94a3b8;">ابدأ الجلسة لعرض بيانات الحضور اللحظية...</td></tr>
+              <tr><td colspan="8" style="color:#94a3b8; padding:25px;">ابدأ الجلسة لعرض بيانات الحضور اللحظية...</td></tr>
             </tbody>
           </table>
         </div>
@@ -239,21 +487,49 @@
     </div>
   </div>
 
+  <!-- 3. نافذة العرض بملء الشاشة للبروجكتور -->
+  <div id="fullscreenModal">
+    <button class="fs-close-btn" onclick="closeFullscreenQR()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      إنهاء العرض الكامل (Esc)
+    </button>
+    <div class="fs-card">
+      <div class="fs-title" id="fsCourseTitle">محاضرة نظم المعلومات الجغرافية</div>
+      <div class="fs-meta">امسح رمز الاستجابة السريعة لتسجيل حضورك من داخل القاعة</div>
+      <div id="fsQrCodeContainer" style="display:flex; justify-content:center; margin:15px 0;"></div>
+      <div class="qr-timer-pill" style="font-size:14px; padding:8px 18px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        يتجدد الرمز خلال: <span id="fsTimerTxt">10</span> ثوانٍ
+      </div>
+    </div>
+  </div>
+
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
 
-    let activeUser = JSON.parse(sessionStorage.getItem("auth_user") || "null");
+    // استخدام localStorage لمزامنة الجلسة مع كافة الصفحات
+    let activeUser = JSON.parse(localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user") || "null");
     let currentCourse = "";
     let roomLat = 0, roomLng = 0, roomRadius = 30;
-    let qrGenerator = null, countdown = 10;
+    let qrNormal = null, qrFullscreen = null;
+    let countdown = 10;
     let attendees = [];
     let isFetching = false;
+    let isFsOpen = false;
 
     window.onload = function() {
       if (activeUser) {
         document.getElementById("loginOverlay").style.display = "none";
         document.getElementById("displayProfName").innerText = activeUser.name;
         document.getElementById("displayProfDept").innerText = activeUser.dept;
+        document.getElementById("avatarLetter").innerText = activeUser.name.charAt(0);
+      }
+
+      // إذا كانت الجلسة قادمة من صفحة المقررات
+      const preset = localStorage.getItem("preset_course");
+      if (preset) {
+        document.getElementById("courseTitleInp").value = preset;
+        localStorage.removeItem("preset_course");
       }
     };
 
@@ -282,10 +558,12 @@
           btn.innerText = "تحقق ودخول";
           if (res.status === "success") {
             activeUser = res.user;
+            localStorage.setItem("auth_user", JSON.stringify(activeUser));
             sessionStorage.setItem("auth_user", JSON.stringify(activeUser));
             document.getElementById("loginOverlay").style.display = "none";
             document.getElementById("displayProfName").innerText = activeUser.name;
             document.getElementById("displayProfDept").innerText = activeUser.dept;
+            document.getElementById("avatarLetter").innerText = activeUser.name.charAt(0);
           } else {
             msg.innerText = res.message || "بيانات الدخول غير صحيحة";
             msg.style.display = "block";
@@ -300,6 +578,7 @@
     }
 
     function logout() {
+      localStorage.removeItem("auth_user");
       sessionStorage.removeItem("auth_user");
       location.reload();
     }
@@ -319,12 +598,18 @@
         document.getElementById("geoStatus").innerText = `محدد (${roomRadius}م)`;
         document.getElementById("roomCoords").innerText = `إحداثيات القاعة: ${roomLat.toFixed(5)}, ${roomLng.toFixed(5)}`;
 
-        qrGenerator = new QRCode(document.getElementById("qrCodeContainer"), { width: 210, height: 210 });
+        // تهيئة مولدي الـ QR (العادي وبملء الشاشة)
+        qrNormal = new QRCode(document.getElementById("qrCodeContainer"), { width: 210, height: 210 });
+        qrFullscreen = new QRCode(document.getElementById("fsQrCodeContainer"), { width: 360, height: 360 });
+
         refreshCode();
         setInterval(refreshCode, 10000);
         setInterval(() => {
           countdown--;
-          if (countdown >= 0) document.getElementById("timerTxt").innerText = countdown;
+          if (countdown >= 0) {
+            document.getElementById("timerTxt").innerText = countdown;
+            document.getElementById("fsTimerTxt").innerText = countdown;
+          }
         }, 1000);
 
         // جلب وتحديث كشف الحضور اللحظي كل ثانيتين ونصف
@@ -342,22 +627,37 @@
       const cleanCourse = currentCourse.trim();
       const targetUrl = `${window.location.origin}${basePath}student.html?k=${token}&ts=${ts}&lat=${roomLat}&lng=${roomLng}&r=${roomRadius}&c=${encodeURIComponent(cleanCourse)}&u=${encodeURIComponent(activeUser.email)}`;
       
-      qrGenerator.clear();
-      qrGenerator.makeCode(targetUrl);
+      if (qrNormal) {
+        qrNormal.clear();
+        qrNormal.makeCode(targetUrl);
+      }
+      if (qrFullscreen) {
+        qrFullscreen.clear();
+        qrFullscreen.makeCode(targetUrl);
+      }
     }
 
+    // الاعتماد على getCumulative لجلب الطلاب بدقة موثوقة وفلترة المقرر النشط
     function pullAttendees() {
       if (!activeUser || !currentCourse || isFetching) return;
       isFetching = true;
 
-      const url = `${SCRIPT_URL}?action=getLiveSession&lecturerEmail=${encodeURIComponent(activeUser.email)}&course=${encodeURIComponent(currentCourse)}&_t=${Date.now()}`;
+      const url = `${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`;
 
       fetch(url)
         .then(res => res.json())
         .then(res => {
           isFetching = false;
-          if (res && res.status === "success" && Array.isArray(res.students)) {
-            attendees = res.students;
+          if (res && res.status === "success" && Array.isArray(res.records)) {
+            const currentC = currentCourse.trim().toLowerCase();
+            
+            // فلترة السجلات الخاصة بالمقرر النشط
+            attendees = res.records.filter(r => {
+              const recCourse = (r.course || "").trim().toLowerCase();
+              if (!currentC || currentC === "محاضرة عامة" || currentC === "عام") return true;
+              return recCourse === currentC || recCourse.includes(currentC) || currentC.includes(recCourse);
+            });
+
             renderTable();
           }
         })
@@ -371,7 +671,7 @@
       document.getElementById("liveCounter").innerText = attendees.length;
       const tbody = document.getElementById("studentRows");
       if (attendees.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="color:#94a3b8;">في انتظار تسجيل أول طالب داخل القاعة...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="color:#94a3b8; padding:20px;">في انتظار تسجيل أول طالب داخل القاعة...</td></tr>';
         return;
       }
       tbody.innerHTML = "";
@@ -380,22 +680,40 @@
           <tr>
             <td>${idx + 1}</td>
             <td><strong>${st.name}</strong></td>
-            <td>${st.grade}</td>
-            <td>${st.group}</td>
-            <td>${st.section}</td>
-            <td>${st.time}</td>
-            <td>${st.distance} م</td>
+            <td>${st.grade || "-"}</td>
+            <td>${st.group || "-"}</td>
+            <td>${st.section || "-"}</td>
+            <td>${st.time || "-"}</td>
+            <td>${st.distance !== undefined ? st.distance + " م" : "-"}</td>
             <td><span class="badge-ok">حاضر</span></td>
           </tr>
         `;
       });
     }
 
+    // إدارة ملء الشاشة للـ QR
+    function openFullscreenQR() {
+      document.getElementById("fsCourseTitle").innerText = currentCourse;
+      document.getElementById("fullscreenModal").classList.add("active");
+      isFsOpen = true;
+    }
+
+    function closeFullscreenQR() {
+      document.getElementById("fullscreenModal").classList.remove("active");
+      isFsOpen = false;
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && isFsOpen) {
+        closeFullscreenQR();
+      }
+    });
+
     function exportCSV() {
       if (attendees.length === 0) return alert("لا توجد بيانات مسجلة حالياً للتصدير");
       let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,السكشن,وقت الحضور,المسافة بالمتر\n";
       attendees.forEach((s, i) => {
-        csv += `${i+1},"${s.name}","${s.grade}","${s.group}","${s.section}","${s.time}",${s.distance}\n`;
+        csv += `${i+1},"${s.name}","${s.grade || '-'}","${s.group || '-'}","${s.section || '-'}","${s.time || '-'}","${s.distance || 0}"\n`;
       });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const a = document.createElement("a");
