@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>لوحة المحاضر | توليد رمز الحضور</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
@@ -25,7 +26,7 @@
       max-width: 420px;
       text-align: center;
     }
-    h2 { margin: 0 0 15px; color: #0284c7; }
+    h2 { margin: 0 0 15px; color: #0284c7; font-size: 22px; }
     input {
       width: 100%;
       padding: 12px;
@@ -45,6 +46,7 @@
       font-weight: bold;
       font-size: 15px;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
     .btn:hover { background: #0369a1; }
     #qrWrap {
@@ -108,7 +110,11 @@
       timer = 10;
       const token = Math.random().toString(36).substring(2, 8);
       const course = encodeURIComponent(document.getElementById("courseName").value.trim() || "عام");
-      const url = `${window.location.origin}/student.html?k=${token}&lat=${lat}&lng=${lng}&r=${radius}&c=${course}`;
+
+      // حل مشكلة 404: حساب المسار الحالي بدقة مهما كان اسم المستودع على GitHub Pages
+      const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+      const url = `${window.location.origin}${basePath}student.html?k=${token}&lat=${lat}&lng=${lng}&r=${radius}&c=${course}`;
+
       qr.clear();
       qr.makeCode(url);
     }

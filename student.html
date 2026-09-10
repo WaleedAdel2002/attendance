@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الحضور | الطالب</title>
+  <title>تسجيل الحضور | بوابة الطالب</title>
   <style>
     :root {
       --primary: #198754;
@@ -92,7 +92,7 @@
   </div>
 
   <script>
-    // الرابط الخاص بك
+    // الرابط الفعلي الخاص بنشرك على Apps Script
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
 
     const params = new URLSearchParams(window.location.search);
@@ -101,14 +101,14 @@
     const allowedRadius = parseFloat(params.get("r")) || 30;
     const courseTitle = decodeURIComponent(params.get("c") || "");
 
-    if (courseTitle && courseTitle !== "undefined") {
+    if (courseTitle && courseTitle !== "undefined" && courseTitle !== "عام") {
       const badge = document.getElementById("courseNameBadge");
       badge.innerText = courseTitle;
       badge.style.display = "inline-block";
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // متر
+      const R = 6371e3; // نصف قطر الأرض بالمتر
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat / 2) ** 2 +
@@ -130,7 +130,7 @@
 
       if (!stuId) return showMessage("يرجى إدخال الرقم الجامعي", "danger");
       if (isNaN(targetLat) || isNaN(targetLng)) {
-        return showMessage("الرابط غير صالح، قم بمسح الرمز من شاشة العرض مباشرة", "danger");
+        return showMessage("الرابط غير صالح، يرجى مسح الرمز من شاشة العرض بالقاعة", "danger");
       }
 
       btn.disabled = true;
@@ -147,7 +147,7 @@
             return showMessage(`أنت خارج نطاق القاعة المسموح (${Math.round(dist)} متر)`, "danger");
           }
 
-          showMessage("جاري حفظ الحضور في كشف Google Drive...", "info");
+          showMessage("جاري حفظ الحضور في كشف المحاضرة على Google Drive...", "info");
 
           fetch(SCRIPT_URL, {
             method: "POST",
@@ -172,7 +172,7 @@
         },
         () => {
           btn.disabled = false;
-          showMessage("يجب تفعيل الـ GPS والسماح للمتصفح بالوصول للموقع", "danger");
+          showMessage("يجب تفعيل الـ GPS وإعطاء الإذن للمتصفح لإتمام التسجيل", "danger");
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
