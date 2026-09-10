@@ -141,13 +141,31 @@
     const courseTitle = decodeURIComponent(params.get("c") || "");
     const generatedTime = parseInt(params.get("ts"), 10);
 
+    function showMessage(msg, type) {
+      const el = document.getElementById("status");
+      el.className = type;
+      el.innerText = msg;
+      el.style.display = "block";
+    }
+
+    // إظهار اسم المقرر
     if (courseTitle && courseTitle !== "undefined" && courseTitle !== "عام") {
       const badge = document.getElementById("courseNameBadge");
       badge.innerText = courseTitle;
       badge.style.display = "block";
     }
 
-    // إنشاء بصمة مميزة للهاتف لمنع تكرار التسجيل من نفس الجهاز
+    // فحص وقت الرابط فور فتح الصفحة (مهلة 90 ثانية للمسح)
+    const now = Date.now();
+    const timeDiff = now - generatedTime;
+    if (!generatedTime || timeDiff > 90000 || timeDiff < -30000) {
+      setTimeout(() => {
+        showMessage("انتهت صلاحية هذا الرمز. يرجى مسح الـ QR المعروض حالياً على الشاشة مباشرة.", "danger");
+        document.getElementById("subBtn").disabled = true;
+      }, 200);
+    }
+
+    // بصمة الجهاز
     function getDeviceIdentifier() {
       let dId = localStorage.getItem("student_device_uuid");
       if (!dId) {
@@ -163,13 +181,6 @@
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-    }
-
-    function showMessage(msg, type) {
-      const el = document.getElementById("status");
-      el.className = type;
-      el.innerText = msg;
-      el.style.display = "block";
     }
 
     function submitAttendance() {
@@ -189,13 +200,7 @@
         return showMessage("يرجى كتابة رقم المجموعة ورقم السكشن", "danger");
       }
 
-      // حماية صلاحية وقت الرمز (20 ثانية كحد أقصى لمنع تداول اللينك)
-      const now = Date.now();
-      if (!generatedTime || (now - generatedTime) > 20000) {
-        return showMessage("انتهت صلاحية الرمز، امسح الـ QR المعروض حالياً على الشاشة", "danger");
-      }
-
-      // حماية القفل المحلي للجهاز
+      // منع تكرار التسجيل من نفس الجهاز لنفس المحاضرة
       const sessionKey = "registered_" + (courseTitle || "lecture");
       if (localStorage.getItem(sessionKey)) {
         return showMessage("تم تسجيل الحضور مسبقاً من هذا الجهاز لهذه المحاضرة!", "danger");
@@ -237,7 +242,6 @@
           .then(() => {
             localStorage.setItem(sessionKey, fullName);
             showMessage("تم تسجيل حضورك بنجاح وتوثيق بياناتك في كشف المحاضرة!", "success");
-            // تعطيل الحقول بعد نجاح التسجيل
             document.getElementById("fullName").disabled = true;
             document.getElementById("gradeLevel").disabled = true;
             document.getElementById("groupNo").disabled = true;
