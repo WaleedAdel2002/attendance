@@ -456,14 +456,52 @@
 
       <!-- كشف الحضور اللحظي وتصدير Excel -->
       <div class="panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+<!-- رأس كشف الحضور والأزرار منظمة في صف واحد -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
           <h3 style="margin:0; color:var(--navy);">كشف حضور الطلاب المسجلين</h3>
-          <button class="btn-main" style="width:auto; padding:8px 16px; font-size:13px; background:var(--success);" onclick="exportCSV()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            تصدير Excel (CSV)
-          </button>
+          
+          <div style="display:flex; align-items:center; gap:8px;">
+            <!-- زر التحضير اليدوي -->
+            <button class="btn-main" style="width:auto; padding:8px 14px; font-size:13px; background:#334155;" onclick="openManualModal()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              تحضير يدوي
+            </button>
+
+            <!-- زر تصدير Excel -->
+            <button class="btn-main" style="width:auto; padding:8px 14px; font-size:13px; background:var(--success);" onclick="exportCSV()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              تصدير (CSV) Excel
+            </button>
+          </div>
         </div>
 
+<!-- نافذة التحضير اليدوي المنبثقة -->
+<div id="manualModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); z-index:4000; justify-content:center; align-items:center; padding:20px;">
+  <div style="background:#fff; border-radius:16px; width:100%; max-width:400px; padding:25px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+    <h3 style="margin:0 0 6px; color:var(--navy);">تسجيل طالب يدوياً</h3>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">خاص بحالات الطلاب الذين لا يحملون هواتف داخل القاعة</p>
+    
+    <input type="text" id="mStudentName" class="input-field" placeholder="اسم الطالب رباعي">
+    
+    <select id="mGrade" class="input-field">
+      <option value="">-- اختر الفرقة --</option>
+      <option value="الفرقة الأولى">الفرقة الأولى</option>
+      <option value="الفرقة الثانية">الفرقة الثانية</option>
+      <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+      <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+    </select>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <input type="text" id="mGroup" class="input-field" placeholder="المجموعة">
+      <input type="text" id="mSection" class="input-field" placeholder="السكشن">
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="btn-main" style="background:var(--success);" onclick="submitManualAttendance()">تأكيد التحضير</button>
+      <button class="btn-main" style="background:#e2e8f0; color:#334155;" onclick="closeManualModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -720,6 +758,51 @@
       a.href = URL.createObjectURL(blob);
       a.download = `حضور_${currentCourse}_${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
+    }
+function openManualModal() {
+      if (!currentCourse) return alert("يرجى بدء الجلسة أولاً وتحديد اسم المقرر");
+      document.getElementById("manualModal").style.display = "flex";
+    }
+
+    function closeManualModal() {
+      document.getElementById("manualModal").style.display = "none";
+      document.getElementById("mStudentName").value = "";
+      document.getElementById("mGrade").value = "";
+      document.getElementById("mGroup").value = "";
+      document.getElementById("mSection").value = "";
+    }
+
+    function submitManualAttendance() {
+      const name = document.getElementById("mStudentName").value.trim();
+      const grade = document.getElementById("mGrade").value.trim();
+      const group = document.getElementById("mGroup").value.trim();
+      const section = document.getElementById("mSection").value.trim();
+
+      if (!name || !grade) return alert("يرجى كتابة اسم الطالب واختيار الفرقة");
+
+      // إرسال السجل للسيرفر بصفة تحضير يدوي من المحاضر
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lecturerEmail: activeUser.email,
+          studentName: name + " (يدوي)",
+          gradeLevel: grade,
+          groupNo: group || "-",
+          sectionNo: section || "-",
+          deviceId: "تحضير_يدوي_بواسطة_المحاضر",
+          courseTitle: currentCourse,
+          coords: `${roomLat.toFixed(5)}, ${roomLng.toFixed(5)}`,
+          distance: 0
+        })
+      }).then(() => {
+        closeManualModal();
+        // سحب وتحديث الكشف فوراً ليظهر في الجدول
+        setTimeout(pullAttendees, 1000);
+      }).catch(() => {
+        alert("حدث خطأ أثناء الإرسال، تحقق من الإنترنت");
+      });
     }
   </script>
 </body>
