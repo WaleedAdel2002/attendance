@@ -8,7 +8,6 @@
     :root {
       --primary: #0284c7;
       --navy: #0f172a;
-      --success: #16a34a;
       --bg: #f8fafc;
       --border: #e2e8f0;
     }
@@ -25,7 +24,7 @@
     .filter-grid { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 12px; margin-bottom: 20px; align-items: end; }
     @media (max-width: 768px) { .filter-grid { grid-template-columns: 1fr; } }
     label { font-size: 13px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px; }
-    input, select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    input { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
     .btn { padding: 11px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: var(--primary); color: #fff; font-size: 14px; }
     .btn:hover { background: #0369a1; }
     table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; margin-top: 15px; }
@@ -48,7 +47,7 @@
     <div class="card">
       <div class="filter-grid">
         <div>
-          <label>اختر أو اكتب اسم المقرر</label>
+          <label>المقرر الدراسي</label>
           <input type="text" id="repCourse" placeholder="اتركه فارغاً لعرض كافة مقرراتك">
         </div>
         <div>
@@ -81,7 +80,7 @@
             </tr>
           </thead>
           <tbody id="repBody">
-            <tr><td colspan="7" style="color:#94a3b8; padding: 25px;">اضغط على "عرض الكشف" لسحب البيانات التراكمية من السحابة...</td></tr>
+            <tr><td colspan="7" style="color:#94a3b8; padding: 25px;">جاري تحميل البيانات التراكمية من السحابة...</td></tr>
           </tbody>
         </table>
       </div>
@@ -90,27 +89,20 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
-
-    // قراءة المستخدم من التخزين المشترك
     let activeUser = JSON.parse(localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user") || "null");
     let reportData = [];
 
     window.onload = function() {
       if (activeUser) {
         document.getElementById("profTag").innerText = `المحاضر: ${activeUser.name} (${activeUser.email})`;
-        fetchSummary(); // تحميل السجلات تلقائياً بمجرد فتح الصفحة
+        fetchSummary();
       } else {
-        document.getElementById("profTag").innerText = "تنبيه: يجب تسجيل الدخول من الصفحة الرئيسية أولاً.";
+        alert("يرجى تسجيل الدخول أولاً من الصفحة الرئيسية");
+        window.location.href = "index.html";
       }
     };
 
     function fetchSummary() {
-      if (!activeUser) {
-        alert("يرجى تسجيل الدخول أولاً من الصفحة الرئيسية");
-        window.location.href = "index.html";
-        return;
-      }
-
       const course = document.getElementById("repCourse").value.trim().toLowerCase();
       const groupFilter = document.getElementById("repGroup").value.trim();
       const secFilter = document.getElementById("repSection").value.trim();
@@ -123,11 +115,10 @@
         .then(res => res.json())
         .then(res => {
           if (res.status === "success" && Array.isArray(res.records)) {
-            // تجميع وتلخيص مرات الحضور لكل طالب
             const aggMap = {};
 
             res.records.forEach(r => {
-              const rCourse = (r.course || "عام").trim();
+              const rCourse = (r.course || "محاضرة عامة").trim();
               if (course && !rCourse.toLowerCase().includes(course)) return;
               if (groupFilter && r.group != groupFilter) return;
               if (secFilter && r.section != secFilter) return;
@@ -154,7 +145,7 @@
         })
         .catch(err => {
           console.error(err);
-          document.getElementById("repBody").innerHTML = '<tr><td colspan="7" style="color:red;">تعذر الاتصال بالسيرفر، تأكد من اتصال الإنترنت</td></tr>';
+          document.getElementById("repBody").innerHTML = '<tr><td colspan="7" style="color:red;">تعذر الاتصال بالسيرفر، تحقق من الإنترنت</td></tr>';
         });
     }
 

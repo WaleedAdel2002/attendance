@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة المقررات الدراسية والجلسات</title>
+  <title>المقررات والجلسات الأكاديمية</title>
   <style>
     :root {
       --primary: #0284c7;
@@ -22,7 +22,7 @@
     .container { max-width: 950px; margin: auto; }
     .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
     .card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--border); margin-bottom: 25px; }
-    input, select { width: 100%; padding: 11px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
     .btn { padding: 11px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: var(--primary); color: #fff; font-size: 14px; }
     .btn:hover { background: #0369a1; }
     .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
@@ -42,10 +42,10 @@
       <a href="index.html" class="btn" style="text-decoration:none; background:#475569;">العودة للرئيسية</a>
     </div>
 
-    <!-- إضافة مقرر جديد سريع -->
+    <!-- إضافة جلسة مقرر جديد -->
     <div class="card">
       <h3 style="margin-top:0;">إضافة جلسة مقرر جديد</h3>
-      <input type="text" id="newCourseName" placeholder="اسم المقرر (مثال: تحليل البيانات المكانية)">
+      <input type="text" id="newCourseName" placeholder="اسم المقرر (مثال: تحليل مكاني متقدم)">
       <button class="btn" onclick="saveCourse()">بدء وفتح الجلسة في القاعة</button>
     </div>
 
@@ -77,7 +77,6 @@
         .then(r => r.json())
         .then(res => {
           if (res.status === "success" && Array.isArray(res.records)) {
-            // استخراج أسماء المقررات الفريدة وعدد الطلاب في كل مقرر
             const courseStats = {};
             res.records.forEach(r => {
               const cName = (r.course || "محاضرة عامة").trim();
@@ -87,7 +86,7 @@
 
             const uniqueCourses = Object.keys(courseStats);
             if (uniqueCourses.length === 0) {
-              grid.innerHTML = '<p style="color:#64748b;">لا توجد جلسات سابقة مسجلة لك بعد، ابدأ بإضافة أول مقرر بالأعلى.</p>';
+              grid.innerHTML = '<p style="color:#64748b;">لا توجد جلسات سابقة مسجلة لك بعد، اكتب اسم المقرر بالأعلى لبدء أول جلسة.</p>';
               return;
             }
 
@@ -95,15 +94,16 @@
             uniqueCourses.forEach(c => {
               grid.innerHTML += `
                 <div class="course-card">
-                  <h4 style="margin:0 0 6px; font-size:16px;">${c}</h4>
-                  <span style="font-size:12px; color:#64748b;">إجمالي السجلات: ${courseStats[c]} تسجيل</span>
+                  <h4 style="margin:0 0 6px; font-size:16px; color:var(--navy);">${c}</h4>
+                  <span style="font-size:12px; color:#64748b;">إجمالي الطلاب المسجلين: ${courseStats[c]}</span>
                   <button class="btn-launch" onclick="launchSession('${c}')">فتح جلسة حضور الآن</button>
                 </div>
               `;
             });
           }
         })
-        .catch(() => {
+        .catch(err => {
+          console.error(err);
           grid.innerHTML = '<p style="color:red;">تعذر تحميل المقررات، تحقق من الاتصال بالإنترنت.</p>';
         });
     }
