@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المنظومة الذكية لإدارة حضور الطلاب | لوحة التحكم</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --navy: #0f172a;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --indigo: #6366f1;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--navy));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .user-tag {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f1f5f9;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+      color: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px rgba(2, 132, 199, 0.15);
+    }
+
+    .welcome-banner h1 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+
+    .welcome-banner p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+      max-width: 650px;
+      line-height: 1.6;
+    }
+
+    /* أزرار ولوحات الانتقال السريع */
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 0 0 18px;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 35px;
+    }
+
+    .hub-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hub-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.06);
+      border-color: var(--primary);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .ib-blue { background: #e0f2fe; color: #0284c7; }
+    .ib-green { background: #dcfce7; color: #16a34a; }
+    .ib-purple { background: #ede9fe; color: #7c3aed; }
+    .ib-amber { background: #fef3c7; color: #d97706; }
+    .ib-slate { background: #e2e8f0; color: #475569; }
+
+    .hub-card h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+      color: var(--navy);
+    }
+
+    .hub-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .card-footer-btn {
+      margin-top: 18px;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: bold;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      color: var(--navy);
+      transition: 0.2s;
+    }
+
+    .hub-card:hover .card-footer-btn {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* الشريط السريع للإحصائيات والروابط المباشرة */
+    .quick-bar {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 25px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .quick-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: 0.2s;
+    }
+
+    .btn-drive {
+      background: #e6f4ea;
+      color: #137333;
+      border: 1px solid #ceead6;
+    }
+    .btn-drive:hover { background: #ceead6; }
+
+    .btn-student {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+    .btn-student:hover { background: #e2e8f0; }
+  </style>
+</head>
+<body>
+
+  <!-- شريط التنقل العلوي -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">GIS</div>
+      <div>
+        <div style="font-weight:bold; font-size:15px; color:var(--navy);">منظومة الحضور الذكي والتحقق الجغرافي</div>
+        <div style="font-size:11px; color:var(--text-muted);">جامعة جنوب الوادي | كلية الآداب - قسم الجغرافيا</div>
+      </div>
+    </div>
+
+    <div class="user-tag">
+      <span>👤 د. عضو هيئة التدريس</span>
+      <a href="login.html" style="color:#ef4444; text-decoration:none; font-size:12px; margin-right:8px;">خروج</a>
+    </div>
+  </header>
+
+  <div class="main-container">
+
+    <!-- بنر الترحيب -->
+    <div class="welcome-banner">
+      <h1>مرحباً بك في لوحة الإدارة المركزية</h1>
+      <p>
+        تحكم في كافة عمليات رصد حضور الطلاب، إنشاء الجلسات التفاعلية برمز QR الديناميكي مع التحقق المكاني الصارم، وإدارة تقارير الفصول الدراسية وتصديرها سحابياً.
+      </p>
+    </div>
+
+    <!-- شبكة التنقل بالأزرار المركزية -->
+    <div class="section-title">
+      <span>⚡ خدمات المنظومة السريعة</span>
+    </div>
+
+    <div class="action-grid">
+
+      <!-- 1. بدء جلسة الحضور -->
+      <a href="index.html" class="hub-card">
+        <div>
+          <div class="card-top">
+            <div class="icon-box ib-blue">📱</div>
+            <div>
+              <h3>شاشة بدء الجلسة والـ QR</h3>
+              <p>تثبيت موقع القاعة جغرافياً وتوليد الرمز المتغير كل 10 ثوانٍ وبدء رصد الحضور.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer-btn">فتح شاشة العرض والقاعة ←</div>
+      </a>
+
+      <!-- 2. إدارة المقررات -->
+      <a href="courses.html" class="hub-card">
+        <div>
+          <div class="card-top">
+            <div class="icon-box ib-purple">📚</div>
+            <div>
+              <h3>إدارة المقررات الدراسية</h3>
+              <p>إضافة المقررات، تحديد الفرق الدراسية، وإدارة المحاضرات المخصصة لك.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer-btn">إدارة المقررات ←</div>
+      </a>
+
+      <!-- 3. استيراد الطلاب من Excel -->
+      <a href="import.html" class="hub-card">
+        <div>
+          <div class="card-top">
+            <div class="icon-box ib-amber">📥</div>
+            <div>
+              <h3>استيراد كشوف الطلاب</h3>
+              <p>رفع ملفات Excel الخاصة بالطلاب المقيدين وفرز المجموعات والسكاشن تلقائياً.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer-btn">رفع ملف Excel ←</div>
+      </a>
+
+      <!-- 4. التقارير والسجل التراكمي -->
+      <a href="reports.html" class="hub-card">
+        <div>
+          <div class="card-top">
+            <div class="icon-box ib-green">📊</div>
+            <div>
+              <h3>السجل التراكمي للترم</h3>
+              <p>استعراض نسب الحضور والغياب لكل طالب طوال الفصل وتصدير شيتات مجمعة.</p>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer-btn">عرض السجلات والتقارير ←</div>
+      </a>
+
+    </div>
+
+    <!-- شريط الروابط المباشرة السحابية -->
+    <div class="quick-bar">
+      <div>
+        <div style="font-weight:bold; font-size:14px; margin-bottom:3px;">الروابط السحابية المباشرة</div>
+        <div style="font-size:12px; color:var(--text-muted);">الوصول إلى قاعدة بيانات Google Drive وبوابة هاتف الطالب</div>
+      </div>
+
+      <div class="quick-links">
+        <!-- رابط مجلد Drive مباشرة -->
+        <a href="https://drive.google.com/open?id=1EvHZ_r-Khqt2Oc3ocjKXqRVvO55FbveA&usp=drive_fs" target="_blank" class="btn-action btn-drive">
+          📁 فتح مجلد الشيتات في Google Drive
+        </a>
+
+        <!-- تجربة بوابة الطالب -->
+        <a href="student.html" target="_blank" class="btn-action btn-student">
+          📲 معاينة صفحة تسجيل الطالب
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

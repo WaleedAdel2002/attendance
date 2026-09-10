@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المقررات الدراسية</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; margin: 0; padding: 25px; color: #0f172a; }
+    .container { max-width: 900px; margin: auto; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    input, select { width: 100%; padding: 11px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #0284c7; color: #fff; }
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; }
+    .course-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; text-align: center; }
+    .btn-open { background: #16a34a; color: #fff; margin-top: 10px; width: 100%; }
+    .btn-del { background: #fee2e2; color: #991b1b; margin-top: 8px; width: 100%; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-bar">
+      <h2>إدارة المقررات الأكاديمية</h2>
+      <a href="index.html" class="btn" style="text-decoration:none; background:#475569;">العودة للرئيسية</a>
+    </div>
+
+    <div class="card">
+      <h3>إضافة مقرر جديد</h3>
+      <input type="text" id="cTitle" placeholder="اسم المقرر (مثال: تحليل مكاني متقدم)">
+      <select id="cGrade">
+        <option value="الفرقة الأولى">الفرقة الأولى</option>
+        <option value="الفرقة الثانية">الفرقة الثانية</option>
+        <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+        <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+      </select>
+      <button class="btn" onclick="addCourse()">إضافة وحفظ المقرر</button>
+    </div>
+
+    <h3>المقررات المسجلة حالياً</h3>
+    <div class="course-grid" id="coursesList"></div>
+  </div>
+
+  <script>
+    let courses = JSON.parse(localStorage.getItem("academic_courses") || "[]");
+
+    if (courses.length === 0) {
+      courses = [
+        { id: 1, title: "نظم المعلومات الجغرافية 2", grade: "الفرقة الثالثة" },
+        { id: 2, title: "الاستشعار عن بعد ومسح جوي", grade: "الفرقة الرابعة" }
+      ];
+      localStorage.setItem("academic_courses", JSON.stringify(courses));
+    }
+
+    function renderCourses() {
+      const container = document.getElementById("coursesList");
+      container.innerHTML = "";
+      courses.forEach((c, idx) => {
+        container.innerHTML += `
+          <div class="course-card">
+            <h4 style="margin:0 0 5px;">${c.title}</h4>
+            <span style="font-size:12px; color:#64748b;">${c.grade}</span>
+            <button class="btn btn-open" onclick="openSession('${c.title}')">فتح جلسة حضور الآن</button>
+            <button class="btn btn-del" onclick="deleteCourse(${idx})">حذف</button>
+          </div>
+        `;
+      });
+    }
+
+    function addCourse() {
+      const title = document.getElementById("cTitle").value.trim();
+      const grade = document.getElementById("cGrade").value;
+      if (!title) return alert("أدخل اسم المقرر");
+      courses.push({ id: Date.now(), title, grade });
+      localStorage.setItem("academic_courses", JSON.stringify(courses));
+      renderCourses();
+      document.getElementById("cTitle").value = "";
+    }
+
+    function deleteCourse(idx) {
+      if (confirm("هل تريد حذف هذا المقرر؟")) {
+        courses.splice(idx, 1);
+        localStorage.setItem("academic_courses", JSON.stringify(courses));
+        renderCourses();
+      }
+    }
+
+    function openSession(title) {
+      sessionStorage.setItem("preset_course", title);
+      window.location.href = "index.html";
+    }
+
+    renderCourses();
+  </script>
+</body>
+</html>
