@@ -19,7 +19,7 @@
       margin: 0;
       padding: 20px;
     }
-    .container { max-width: 1350px; margin: auto; }
+    .container { max-width: 1400px; margin: auto; }
     .header-bar {
       display: flex;
       justify-content: space-between;
@@ -138,16 +138,16 @@
     <div class="card">
       <div class="controls-grid">
         <div>
-          <label>اختر المقرر الأساسي (مثال: كاد)</label>
+          <label>اختر المقرر الأساسي</label>
           <select id="baseCourseSelect" onchange="renderMatrixTable()"></select>
         </div>
         <div>
-          <label>الدرجة المخصصة للحضور</label>
+          <label>درجة الحضور</label>
           <input type="number" id="maxAttendanceScore" value="10" min="0" max="100" oninput="recalculateTotals()">
         </div>
         <div>
-          <label>فلترة السكشن (اختياري)</label>
-          <input type="text" id="secFilter" placeholder="الكل" oninput="renderMatrixTable()">
+          <label>فلترة المجموعة (اختياري)</label>
+          <input type="text" id="groupFilter" placeholder="الكل" oninput="renderMatrixTable()">
         </div>
         <button class="btn btn-primary" onclick="loadData()">تحديث البيانات</button>
       </div>
@@ -157,16 +157,16 @@
     <div class="card" style="padding:15px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span style="font-weight:bold; font-size:14px;" id="matrixCount">عدد الطلاب: 0</span>
-        <span style="font-size:12px; color:#64748b;">يتم حفظ درجات العملي والميدترم في ورقة Grades_Master بالسحابة</span>
+        <span style="font-size:12px; color:#64748b;">درجات العملي والميدترم تُحفظ في ورقة Grades_Master بالسحابة</span>
       </div>
 
       <div class="table-container">
         <table id="matrixTable">
           <thead id="matrixHead">
-            <tr><th>م</th><th>اسم الطالب</th><th>الفرقة</th><th>السكشن</th></tr>
+            <tr><th>م</th><th>اسم الطالب</th><th>الفرقة</th><th>المجموعة</th></tr>
           </thead>
           <tbody id="matrixBody">
-            <tr><td colspan="6" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
+            <tr><td colspan="7" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
           </tbody>
         </table>
       </div>
@@ -191,12 +191,10 @@
       }
     };
 
-    // معالجة ذكية للاسم الأساسي ورقم الجلسة (مثال: "كاد 1" أو "كاد1" أو "كاد سكشن 2")
     function parseCourseName(raw) {
       if (!raw) return { base: "عام", session: "1" };
       let str = raw.trim();
 
-      // البحث عن أرقام إنجليزية أو عربية في نهاية النص
       const match = str.match(/^(.*?)[_\s-]*([0-9\u0660-\u0669]+)$/);
       if (match) {
         let base = match[1].replace(/محاضرة|سكشن/g, "").trim();
@@ -207,7 +205,7 @@
 
     function loadData() {
       if (!activeUser) return;
-      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="8" style="padding:25px; color:#0284c7;">جاري سحب السجلات ومصفوفة الحضور...</td></tr>';
+      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="9" style="padding:25px; color:#0284c7;">جاري سحب السجلات ومصفوفة الحضور...</td></tr>';
 
       const p1 = fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
         .then(r => r.json());
@@ -233,8 +231,8 @@
         organizeCourses();
         populateCourseDropdown();
         renderMatrixTable();
-      }).catch(err => {
-        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="8" style="color:red; padding:20px;">تعذر استرجاع البيانات، تأكد من الاتصال بالإنترنت.</td></tr>';
+      }).catch(() => {
+        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="9" style="color:red; padding:20px;">تعذر استرجاع البيانات، تأكد من الاتصال بالإنترنت.</td></tr>';
       });
     }
 
@@ -252,7 +250,6 @@
           courseGroups[parsed.base].students[stName] = {
             grade: r.grade || "-",
             group: r.group || "-",
-            section: r.section || "-",
             attendedSessions: new Set()
           };
         }
@@ -285,12 +282,12 @@
 
     function renderMatrixTable() {
       const baseCourse = document.getElementById("baseCourseSelect").value;
-      const secFilter = document.getElementById("secFilter").value.trim();
+      const groupFilter = document.getElementById("groupFilter").value.trim();
       const maxAttScore = parseFloat(document.getElementById("maxAttendanceScore").value) || 10;
       const tbody = document.getElementById("matrixBody");
 
       if (!baseCourse || !courseGroups[baseCourse]) {
-        tbody.innerHTML = '<tr><td colspan="8" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
         document.getElementById("matrixCount").innerText = "عدد الطلاب: 0";
         return;
       }
@@ -301,12 +298,12 @@
       const totalSessions = sessions.length;
       const studentsObj = courseGroups[baseCourse].students;
 
-      // 1. بناء رأس الجدول بالأعمدة الديناميكية
+      // 1. رأس الجدول بدون عمود السكشن
       let headHTML = `<tr>
         <th>م</th>
         <th>اسم الطالب</th>
         <th>الفرقة</th>
-        <th>السكشن</th>`;
+        <th>المجموعة</th>`;
       
       sessions.forEach(s => {
         headHTML += `<th>جلسة (${s})</th>`;
@@ -321,13 +318,13 @@
       </tr>`;
       document.getElementById("matrixHead").innerHTML = headHTML;
 
-      // 2. تعبئة صفوف الطلاب
+      // 2. تعبئة صفوف الطلاب مع فلترة المجموعة فقط
       tbody.innerHTML = "";
       let count = 0;
 
       Object.keys(studentsObj).sort().forEach(name => {
         const info = studentsObj[name];
-        if (secFilter && info.section.toString().trim() !== secFilter) return;
+        if (groupFilter && info.group.toString().trim() !== groupFilter) return;
         count++;
 
         const attendedCount = info.attendedSessions.size;
@@ -338,7 +335,7 @@
           <td>${count}</td>
           <td style="text-align:right; font-weight:bold;">${name}</td>
           <td>${info.grade}</td>
-          <td>${info.section}</td>`;
+          <td>${info.group}</td>`;
 
         sessions.forEach(s => {
           if (info.attendedSessions.has(s)) {
@@ -419,7 +416,7 @@
       }).catch(() => {
         btn.innerText = "💾 حفظ التعديلات في الشيت";
         btn.disabled = false;
-        alert("حدث خطأ أثناء الاتصال، يرجى المحاولة لاحقاً");
+        alert("حدث خطأ أثناء الاتصال بالسيرفر");
       });
     }
 
@@ -427,22 +424,22 @@
       const baseCourse = document.getElementById("baseCourseSelect").value;
       if (!baseCourse) return alert("يرجى اختيار المقرر أولاً");
 
-      let csv = "\uFEFFم,اسم الطالب,الفرقة,السكشن,عدد المحاضرات,درجة الحضور,درجة العملي,درجة الميدترم,إجمالي أعمال السنة\n";
+      let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,عدد المحاضرات,درجة الحضور,درجة العملي,درجة الميدترم,إجمالي أعمال السنة\n";
       
       document.querySelectorAll("#matrixBody tr").forEach(row => {
         const cols = row.querySelectorAll("td");
-        if (cols.length > 5) {
+        if (cols.length > 4) {
           const m = cols[0].innerText;
           const name = `"${cols[1].innerText}"`;
           const grade = cols[2].innerText;
-          const sec = cols[3].innerText;
+          const grp = cols[3].innerText;
           const pIn = row.querySelector(".practical-in").value;
           const mIn = row.querySelector(".midterm-in").value;
           const tot = row.querySelector(".row-total").innerText;
           const attScore = row.querySelector('[id^="att_score_"]').innerText;
           const attCount = cols[cols.length - 5].innerText;
 
-          csv += `${m},${name},${grade},${sec},${attCount},${attScore},${pIn},${mIn},${tot}\n`;
+          csv += `${m},${name},${grade},${grp},${attCount},${attScore},${pIn},${mIn},${tot}\n`;
         }
       });
 
