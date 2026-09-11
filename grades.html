@@ -124,7 +124,7 @@
         <span style="font-size:13px; color:#64748b;" id="profTag">المحاضر: جاري التحقق...</span>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="btn btn-success" onclick="saveGradesToCloud()">
+        <button class="btn btn-success" id="saveBtn" onclick="saveGradesToCloud()">
           💾 حفظ التعديلات في الشيت
         </button>
         <button class="btn btn-navy" onclick="exportMatrixCSV()">
@@ -153,11 +153,11 @@
       </div>
     </div>
 
-    <!-- جدول المصفوفة -->
+    <!-- جدول مصفوفة الحضور والدرجات -->
     <div class="card" style="padding:15px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span style="font-weight:bold; font-size:14px;" id="matrixCount">عدد الطلاب: 0</span>
-        <span style="font-size:12px; color:#64748b;">يتم حفظ درجات العملي والميدترم تلقائياً في السحابة بمجرد الضغط على زر الحفظ</span>
+        <span style="font-size:12px; color:#64748b;">يتم حفظ درجات العملي والميدترم في ورقة Grades_Master بالسحابة</span>
       </div>
 
       <div class="table-container">
@@ -179,7 +179,7 @@
 
     let allRawRecords = [];
     let savedGradesMap = {};
-    let courseGroups = {}; // تجزئة المقررات الأساسية وجلساتها
+    let courseGroups = {};
 
     window.onload = function() {
       if (activeUser) {
@@ -191,41 +191,51 @@
       }
     };
 
-    // استخلاص الاسم الأساسي (مثال: "كاد 1" تصبح الأساس: "كاد" والجلسة: "1")
-    function parseCourseName(fullCourse) {
-      if (!fullCourse) return { base: "عام", session: "1" };
-      const str = fullCourse.trim();
-      const match = str.match(/^(.*?)\s*(\d+)$/);
+    // معالجة ذكية للاسم الأساسي ورقم الجلسة (مثال: "كاد 1" أو "كاد1" أو "كاد سكشن 2")
+    function parseCourseName(raw) {
+      if (!raw) return { base: "عام", session: "1" };
+      let str = raw.trim();
+
+      // البحث عن أرقام إنجليزية أو عربية في نهاية النص
+      const match = str.match(/^(.*?)[_\s-]*([0-9\u0660-\u0669]+)$/);
       if (match) {
-        return { base: match[1].trim() || str, session: match[2] };
+        let base = match[1].replace(/محاضرة|سكشن/g, "").trim();
+        return { base: base || match[1].trim(), session: match[2].trim() };
       }
       return { base: str, session: "1" };
     }
 
     function loadData() {
       if (!activeUser) return;
-      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="8" style="padding:25px;">جاري جلب السجلات والدرجات من السحابة...</td></tr>';
+      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="8" style="padding:25px; color:#0284c7;">جاري سحب السجلات ومصفوفة الحضور...</td></tr>';
 
-      // 1. جلب سجلات الحضور
-      fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
+      const p1 = fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
+        .then(r => r.json());
+
+      const p2 = fetch(`${SCRIPT_URL}?action=getSavedGrades&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
         .then(r => r.json())
-        .then(res => {
-          if (res.status === "success" && Array.isArray(res.records)) {
-            allRawRecords = res.records;
-            organizeCourses();
+        .catch(() => ({ status: "bypass", grades: {} }));
 
-            // 2. جلب الدرجات المحفوظة في Grades_Master
-            fetch(`${SCRIPT_URL}?action=getSavedGrades&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
-              .then(gr => gr.json())
-              .then(gRes => {
-                if (gRes.status === "success" && gRes.grades) {
-                  savedGradesMap = gRes.grades;
-                }
-                populateCourseDropdown();
-                renderMatrixTable();
-              });
-          }
-        });
+      Promise.allSettled([p1, p2]).then(results => {
+        const resAttendance = results[0].status === "fulfilled" ? results[0].value : null;
+        const resGrades = results[1].status === "fulfilled" ? results[1].value : null;
+
+        if (resAttendance && resAttendance.status === "success" && Array.isArray(resAttendance.records)) {
+          allRawRecords = resAttendance.records;
+        } else {
+          allRawRecords = [];
+        }
+
+        if (resGrades && resGrades.status === "success" && resGrades.grades) {
+          savedGradesMap = resGrades.grades;
+        }
+
+        organizeCourses();
+        populateCourseDropdown();
+        renderMatrixTable();
+      }).catch(err => {
+        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="8" style="color:red; padding:20px;">تعذر استرجاع البيانات، تأكد من الاتصال بالإنترنت.</td></tr>';
+      });
     }
 
     function organizeCourses() {
@@ -237,7 +247,7 @@
         }
         courseGroups[parsed.base].sessions.add(parsed.session);
 
-        const stName = (r.name || "").trim();
+        const stName = (r.name || "").replace(" (يدوي)", "").trim();
         if (!courseGroups[parsed.base].students[stName]) {
           courseGroups[parsed.base].students[stName] = {
             grade: r.grade || "-",
@@ -257,14 +267,14 @@
       const bases = Object.keys(courseGroups);
 
       if (bases.length === 0) {
-        select.innerHTML = '<option value="">لا توجد مقررات مسجلة بعد</option>';
+        select.innerHTML = '<option value="">لا توجد مقررات مسجلة بعد في الشيت</option>';
         return;
       }
 
       bases.forEach(b => {
         const opt = document.createElement("option");
         opt.value = b;
-        opt.innerText = `مقرر: ${b} (${courseGroups[b].sessions.size} جلسات/محاضرات)`;
+        opt.innerText = `مقرر: ${b} (${courseGroups[b].sessions.size} جلسات رُصدت)`;
         select.appendChild(opt);
       });
 
@@ -277,17 +287,21 @@
       const baseCourse = document.getElementById("baseCourseSelect").value;
       const secFilter = document.getElementById("secFilter").value.trim();
       const maxAttScore = parseFloat(document.getElementById("maxAttendanceScore").value) || 10;
+      const tbody = document.getElementById("matrixBody");
 
       if (!baseCourse || !courseGroups[baseCourse]) {
-        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="6">لا توجد بيانات متاحة لهذا المقرر</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
+        document.getElementById("matrixCount").innerText = "عدد الطلاب: 0";
         return;
       }
 
-      const sessions = Array.from(courseGroups[baseCourse].sessions).sort((a,b) => parseInt(a) - parseInt(b));
+      const sessions = Array.from(courseGroups[baseCourse].sessions).sort((a,b) => {
+        return (parseInt(a) || 0) - (parseInt(b) || 0);
+      });
       const totalSessions = sessions.length;
       const studentsObj = courseGroups[baseCourse].students;
 
-      // بناء رأس الجدول ديناميكياً
+      // 1. بناء رأس الجدول بالأعمدة الديناميكية
       let headHTML = `<tr>
         <th>م</th>
         <th>اسم الطالب</th>
@@ -295,7 +309,7 @@
         <th>السكشن</th>`;
       
       sessions.forEach(s => {
-        headHTML += `<th>محاضرة/سكشن (${s})</th>`;
+        headHTML += `<th>جلسة (${s})</th>`;
       });
 
       headHTML += `
@@ -303,24 +317,21 @@
         <th>درجة الحضور (${maxAttScore})</th>
         <th>العملي</th>
         <th>الميدترم</th>
-        <th>مجموع أعمال السنة</th>
+        <th>إجمالي أعمال السنة</th>
       </tr>`;
       document.getElementById("matrixHead").innerHTML = headHTML;
 
-      // بناء صفوف الطلاب
-      const tbody = document.getElementById("matrixBody");
+      // 2. تعبئة صفوف الطلاب
       tbody.innerHTML = "";
       let count = 0;
 
       Object.keys(studentsObj).sort().forEach(name => {
         const info = studentsObj[name];
-        if (secFilter && info.section != secFilter) return;
+        if (secFilter && info.section.toString().trim() !== secFilter) return;
         count++;
 
         const attendedCount = info.attendedSessions.size;
         const attendanceScore = totalSessions > 0 ? ((attendedCount / totalSessions) * maxAttScore).toFixed(1) : 0;
-
-        // استرجاع درجات العملي والميدترم المحفوظة مسبقاً
         const saved = savedGradesMap[name] || { practical: 0, midterm: 0 };
 
         let rowHTML = `<tr>
@@ -368,10 +379,9 @@
       });
     }
 
-    // حفظ الدرجات في جدول Grades_Master على Google Drive
     function saveGradesToCloud() {
       const baseCourse = document.getElementById("baseCourseSelect").value;
-      if (!baseCourse) return alert("اختر المقرر أولاً");
+      if (!baseCourse) return alert("يرجى اختيار المقرر أولاً");
 
       const entries = [];
       document.querySelectorAll("#matrixBody tr").forEach(row => {
@@ -388,9 +398,9 @@
 
       if (entries.length === 0) return alert("لا توجد بيانات لحفظها");
 
-      const saveBtn = event.target;
-      saveBtn.innerText = "جاري الحفظ في الشيت...";
-      saveBtn.disabled = true;
+      const btn = document.getElementById("saveBtn");
+      btn.innerText = "جاري الحفظ في الشيت...";
+      btn.disabled = true;
 
       fetch(SCRIPT_URL, {
         method: "POST",
@@ -403,20 +413,19 @@
           entries: entries
         })
       }).then(() => {
-        saveBtn.innerText = "💾 حفظ التعديلات في الشيت";
-        saveBtn.disabled = false;
+        btn.innerText = "💾 حفظ التعديلات في الشيت";
+        btn.disabled = false;
         alert("تم حفظ درجات أعمال السنة في Google Drive بنجاح!");
       }).catch(() => {
-        saveBtn.innerText = "💾 حفظ التعديلات في الشيت";
-        saveBtn.disabled = false;
-        alert("حدث خطأ أثناء الحفظ، تحقق من الإنترنت");
+        btn.innerText = "💾 حفظ التعديلات في الشيت";
+        btn.disabled = false;
+        alert("حدث خطأ أثناء الاتصال، يرجى المحاولة لاحقاً");
       });
     }
 
-    // تصدير الكشف النهائي بملف Excel متوافق مع المنصات الجامعية
     function exportMatrixCSV() {
       const baseCourse = document.getElementById("baseCourseSelect").value;
-      if (!baseCourse) return alert("اختر المقرر أولاً");
+      if (!baseCourse) return alert("يرجى اختيار المقرر أولاً");
 
       let csv = "\uFEFFم,اسم الطالب,الفرقة,السكشن,عدد المحاضرات,درجة الحضور,درجة العملي,درجة الميدترم,إجمالي أعمال السنة\n";
       
