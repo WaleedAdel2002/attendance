@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة استعلام الطالب | الحضور وأعمال السنة</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --navy: #0f172a;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 25px 15px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .portal-container {
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .header-box h2 {
+      margin: 0 0 6px;
+      color: var(--navy);
+      font-size: 22px;
+    }
+
+    .header-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .search-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      margin-bottom: 22px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+      text-align: right;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #334155;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+      font-family: inherit;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .btn-search {
+      width: 100%;
+      padding: 11px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-search:hover { background: #0369a1; }
+
+    .course-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .course-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .course-title {
+      font-size: 17px;
+      font-weight: bold;
+      color: var(--navy);
+    }
+
+    .status-pill {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .status-safe { background: #dcfce7; color: var(--success); }
+    .status-warning { background: #fef3c7; color: var(--warning); }
+    .status-danger { background: #fee2e2; color: var(--danger); }
+
+    .summary-table-container {
+      overflow-x: auto;
+      margin-bottom: 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .summary-table th {
+      background: #f8fafc;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--border);
+      border-left: 1px solid var(--border);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .summary-table td {
+      padding: 10px 8px;
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--navy);
+      border-left: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .summary-table th:last-child,
+    .summary-table td:last-child {
+      border-left: none;
+    }
+
+    .highlight-cell {
+      background: #e0f2fe;
+      color: #0369a1 !important;
+    }
+
+    .locked-grades-banner {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      color: #b45309;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .sessions-accordion {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    .sessions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .session-mini-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      font-size: 12px;
+    }
+
+    .tag-attended { color: var(--success); font-weight: bold; }
+    .tag-absent { color: var(--danger); font-weight: bold; }
+
+    #loading {
+      text-align: center;
+      padding: 15px;
+      font-size: 13px;
+      color: var(--primary);
+      display: none;
+    }
+
+    #errorMsg {
+      display: none;
+      padding: 10px;
+      background: #fee2e2;
+      color: var(--danger);
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .student-badge-bar {
+      background: #f1f5f9;
+      padding: 9px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--navy);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-container">
+    <div class="header-box">
+      <h2>بوابة متابعة الطالب الأكاديمية</h2>
+      <p>استعلم بكودك الجامعي عن كشف حضورك ودرجات أعمال السنة</p>
+    </div>
+
+    <!-- نموذج الاستعلام -->
+    <div class="search-card">
+      <div class="form-group">
+        <label for="lecturerEmail">البريد الأكاديمي للمحاضر</label>
+        <input type="email" id="lecturerEmail" value="waleed@art.svu.edu.eg" placeholder="بريد أستاذ المادة">
+      </div>
+
+      <div class="form-group">
+        <label for="queryInput">كود الطالب / رقم الجلوس (أو الاسم)</label>
+        <input type="text" id="queryInput" placeholder="أدخل كودك الجامعي أو رقم الجلوس">
+      </div>
+
+      <button class="btn-search" id="searchBtn" onclick="searchStudent()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        استعلام عن السجلات
+      </button>
+
+      <div id="loading">جاري فحص السجلات ومطابقة الكود...</div>
+      <div id="errorMsg"></div>
+    </div>
+
+    <!-- حاوية عرض المقررات -->
+    <div id="coursesOutput"></div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
+
+    function normalizeArabic(text) {
+      if (!text) return "";
+      return text.replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim();
+    }
+
+    function isNameMatch(nameA, nameB) {
+      const normA = normalizeArabic(nameA);
+      const normB = normalizeArabic(nameB);
+      if (normA === normB) return true;
+
+      const partsA = normA.split(" ").filter(Boolean);
+      const partsB = normB.split(" ").filter(Boolean);
+
+      if (partsA.length >= 3 && partsB.length >= 3) {
+        return partsA[0] === partsB[0] && partsA[1] === partsB[1] && partsA[2] === partsB[2];
+      }
+      return false;
+    }
+
+    function parseCourseName(raw) {
+      if (!raw) return { base: "عام", session: "1" };
+      let str = raw.trim();
+      const match = str.match(/^(.*?)[_\s-]*([0-9\u0660-\u0669]+)$/);
+      if (match) {
+        let base = match[1].replace(/محاضرة|سكشن/g, "").trim();
+        return { base: base || match[1].trim(), session: match[2].trim() };
+      }
+      return { base: str, session: "1" };
+    }
+
+    function cleanDate(dateStr) {
+      if (!dateStr) return "-";
+      return dateStr.toString().split("T")[0];
+    }
+
+    function searchStudent() {
+      const email = document.getElementById("lecturerEmail").value.trim();
+      const query = document.getElementById("queryInput").value.trim();
+      const loading = document.getElementById("loading");
+      const errEl = document.getElementById("errorMsg");
+      const outContainer = document.getElementById("coursesOutput");
+      const btn = document.getElementById("searchBtn");
+
+      errEl.style.display = "none";
+      outContainer.innerHTML = "";
+
+      if (!email || !query) {
+        errEl.innerText = "يرجى كتابة بريد المحاضر وكود الطالب أو اسمه للبحث";
+        errEl.style.display = "block";
+        return;
+      }
+
+      loading.style.display = "block";
+      btn.disabled = true;
+
+      const p1 = fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(email)}&_t=${Date.now()}`).then(r => r.json());
+      const p2 = fetch(`${SCRIPT_URL}?action=getSavedGrades&lecturerEmail=${encodeURIComponent(email)}&_t=${Date.now()}`).then(r => r.json()).catch(() => ({ status: "bypass", grades: {} }));
+      const p3 = fetch(`${SCRIPT_URL}?action=getVisibility&lecturerEmail=${encodeURIComponent(email)}&_t=${Date.now()}`).then(r => r.json()).catch(() => ({ status: "bypass", visibility: {} }));
+
+      Promise.allSettled([p1, p2, p3]).then(results => {
+        loading.style.display = "none";
+        btn.disabled = false;
+
+        const resAtt = results[0].status === "fulfilled" ? results[0].value : null;
+        const resGrd = results[1].status === "fulfilled" ? results[1].value : null;
+        const resVis = results[2].status === "fulfilled" ? results[2].value : null;
+
+        if (!resAtt || resAtt.status !== "success" || !Array.isArray(resAtt.records) || resAtt.records.length === 0) {
+          errEl.innerText = "لم يتم العثور على أي جلسات حضور مسجلة لهذا المحاضر";
+          errEl.style.display = "block";
+          return;
+        }
+
+        const coursesMap = {};
+        let resolvedCode = "";
+        let resolvedName = "";
+
+        // فحص السجلات والبحث بالكود أولاً ثم بالاسم
+        resAtt.records.forEach(r => {
+          const parsed = parseCourseName(r.course);
+          const base = parsed.base;
+          const recCode = (r.code || "").toString().trim();
+          const recName = (r.name || "").replace(" (يدوي)", "").trim();
+
+          if (!coursesMap[base]) {
+            coursesMap[base] = {
+              allSessions: new Map(),
+              attendedSessions: new Set(),
+              studentInfo: null
+            };
+          }
+          coursesMap[base].allSessions.set(parsed.session, cleanDate(r.date));
+
+          const queryClean = query.toLowerCase();
+          const isCodeMatch = recCode && recCode.toLowerCase() === queryClean;
+          const isNameMatched = isNameMatch(recName, query);
+
+          if (isCodeMatch || isNameMatched) {
+            if (!coursesMap[base].studentInfo || recName.split(" ").length > coursesMap[base].studentInfo.name.split(" ").length) {
+              coursesMap[base].studentInfo = {
+                code: recCode || query,
+                name: recName,
+                grade: r.grade || "-",
+                group: r.group || "-",
+                section: r.section || "-"
+              };
+              resolvedCode = recCode || query;
+              resolvedName = recName;
+            }
+            coursesMap[base].attendedSessions.add(parsed.session);
+          }
+        });
+
+        const studentCourses = Object.keys(coursesMap).filter(base => coursesMap[base].studentInfo !== null);
+
+        if (studentCourses.length === 0) {
+          errEl.innerText = "لم يتم العثور على سجلات تطابق الكود أو الاسم المدخل";
+          errEl.style.display = "block";
+          return;
+        }
+
+        const gradesData = (resGrd && resGrd.status === "success" && resGrd.grades) ? resGrd.grades : {};
+        const visibilityMap = (resVis && resVis.status === "success" && resVis.visibility) ? resVis.visibility : {};
+
+        let cardsHTML = `
+          <div class="student-badge-bar">
+            <span>👤 الطالب: ${resolvedName} (كود: ${resolvedCode})</span>
+            <span>عدد المقررات: ${studentCourses.length}</span>
+          </div>
+        `;
+
+        studentCourses.forEach(base => {
+          const cData = coursesMap[base];
+          const totalSessions = cData.allSessions.size;
+          const attendedCount = cData.attendedSessions.size;
+          const percentage = totalSessions > 0 ? Math.round((attendedCount / totalSessions) * 100) : 0;
+
+          // التحقق من صلاحية نشر الدرجات لهذا المقرر
+          const isGradesVisible = visibilityMap[base] === true || visibilityMap[email + "___" + base] === true;
+
+          // جلب درجات الطالب بالكود أولاً
+          const codeKey = base + "___" + cData.studentInfo.code;
+          const nameKey = base + "___" + cData.studentInfo.name;
+          let gradeObj = gradesData[codeKey] || gradesData[nameKey] || { attScore: 0, practical: 0, midterm: 0, totalScore: 0 };
+
+          let attScore = gradeObj.attScore !== undefined ? gradeObj.attScore : (totalSessions > 0 ? ((attendedCount / totalSessions) * 10).toFixed(1) : 0);
+          let practical = gradeObj.practical !== undefined ? gradeObj.practical : 0;
+          let midterm = gradeObj.midterm !== undefined ? gradeObj.midterm : 0;
+          let totalScore = gradeObj.totalScore !== undefined ? gradeObj.totalScore : (parseFloat(attScore) + parseFloat(practical) + parseFloat(midterm)).toFixed(1);
+
+          let statusClass = "status-safe";
+          let statusText = "منتظم ومستوفٍ للنسبة";
+          if (percentage < 50) {
+            statusClass = "status-danger";
+            statusText = "معرض للحرمان من الامتحان";
+          } else if (percentage < 75) {
+            statusClass = "status-warning";
+            statusText = "إنذار غياب";
+          }
+
+          let sessionsHTML = "";
+          const sortedSessions = Array.from(cData.allSessions.keys()).sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0));
+          sortedSessions.forEach(sNum => {
+            const isAtt = cData.attendedSessions.has(sNum);
+            const sDate = cData.allSessions.get(sNum);
+            sessionsHTML += `
+              <div class="session-mini-item">
+                <span><strong>جلسة (${sNum})</strong> <span style="color:#94a3b8; font-size:11px;">(${sDate})</span></span>
+                <span class="${isAtt ? 'tag-attended' : 'tag-absent'}">${isAtt ? '✔ حاضر' : '✖ غائب'}</span>
+              </div>
+            `;
+          });
+
+          // عرض الجدول الكامل أو جدول الحضور فقط بناءً على إعداد الرؤية
+          let tableSectionHTML = "";
+          if (isGradesVisible) {
+            tableSectionHTML = `
+              <div class="summary-table-container">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>المحاضرات</th>
+                      <th>الحضور</th>
+                      <th>نسبة الالتزام</th>
+                      <th>درجة الحضور</th>
+                      <th>العملي</th>
+                      <th>الميدترم</th>
+                      <th class="highlight-cell">إجمالي أعمال السنة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>${totalSessions}</td>
+                      <td style="color:var(--success);">${attendedCount}</td>
+                      <td>${percentage}%</td>
+                      <td>${attScore}</td>
+                      <td>${practical}</td>
+                      <td>${midterm}</td>
+                      <td class="highlight-cell">${totalScore}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            `;
+          } else {
+            tableSectionHTML = `
+              <div class="locked-grades-banner">
+                <span>🔒</span> درجات أعمال السنة محجوبة حالياً بواسطة أستاذ المقرر وتخضع للمراجعة.
+              </div>
+              <div class="summary-table-container">
+                <table class="summary-table">
+                  <thead>
+                    <tr>
+                      <th>إجمالي المحاضرات</th>
+                      <th>عدد مرات الحضور</th>
+                      <th>المحاضرات الغائبة</th>
+                      <th class="highlight-cell">نسبة الالتزام</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>${totalSessions}</td>
+                      <td style="color:var(--success);">${attendedCount}</td>
+                      <td style="color:var(--danger);">${totalSessions - attendedCount}</td>
+                      <td class="highlight-cell">${percentage}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            `;
+          }
+
+          cardsHTML += `
+            <div class="course-card">
+              <div class="course-header">
+                <div>
+                  <span class="course-title">📘 مقرر: ${base}</span>
+                  <span style="font-size:12px; color:#64748b; margin-right:8px;">
+                    (${cData.studentInfo.grade} | مجموعة: ${cData.studentInfo.group} | سكشن: ${cData.studentInfo.section})
+                  </span>
+                </div>
+                <div class="status-pill ${statusClass}">${statusText}</div>
+              </div>
+
+              ${tableSectionHTML}
+
+              <div class="sessions-accordion">
+                <div style="font-size:11px; font-weight:bold; color:var(--muted);">سجل الجلسات بالتفصيل:</div>
+                <div class="sessions-grid">
+                  ${sessionsHTML}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        outContainer.innerHTML = cardsHTML;
+
+      }).catch(() => {
+        loading.style.display = "none";
+        btn.disabled = false;
+        errEl.innerText = "تعذر الاتصال بقاعدة البيانات، تأكد من اتصال الإنترنت";
+        errEl.style.display = "block";
+      });
+    }
+  </script>
+</body>
+</html>

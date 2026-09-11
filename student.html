@@ -121,8 +121,15 @@
       تحقق من بياناتك لتأكيد تواجدك داخل القاعة
     </p>
 
+    <!-- حقل كود الطالب كمعرف أساسي إلزامي -->
     <div class="form-group">
-      <label for="fullName">الاسم رباعي أو الكود الجامعي</label>
+      <label for="studentCode">كود الطالب / رقم الجلوس <span style="color:red;">*</span></label>
+      <input type="text" id="studentCode" placeholder="مثال: 2026105" oninput="handleCodeLookup(this.value)">
+    </div>
+
+    <!-- حقل اسم الطالب -->
+    <div class="form-group">
+      <label for="fullName">اسم الطالب رباعياً <span style="color:red;">*</span></label>
       <input type="text" id="fullName" list="studentNamesList" placeholder="أدخل اسمك رباعياً كما بالكشف" oninput="handleAutoLookup(this.value)">
       <datalist id="studentNamesList"></datalist>
     </div>
@@ -164,40 +171,44 @@
     const lecturerEmail = decodeURIComponent(params.get("u") || "");
     const generatedTime = parseInt(params.get("ts"), 10);
 
-    // مصفوفة حفظ الأسماء
     let allStudents = [];
 
     window.onload = function() {
-      // 1. التعبئة التلقائية إذا سبق للطالب التسجيل من هذا المتصفح
+      // 1. التعبئة التلقائية للبيانات المخزنة مسبقاً على هاتف الطالب
+      const savedCode = localStorage.getItem("saved_student_code");
       const savedName = localStorage.getItem("saved_student_name");
       const savedGrade = localStorage.getItem("saved_student_grade");
       const savedGroup = localStorage.getItem("saved_student_group");
       const savedSection = localStorage.getItem("saved_student_section");
 
+      if (savedCode) document.getElementById("studentCode").value = savedCode;
       if (savedName) document.getElementById("fullName").value = savedName;
       if (savedGrade) document.getElementById("gradeLevel").value = savedGrade;
       if (savedGroup) document.getElementById("groupNo").value = savedGroup;
       if (savedSection) document.getElementById("sectionNo").value = savedSection;
 
-      // 2. تحميل الكشف المخزن محلياً أولاً
+      // 2. تحميل الكشوف المحفوظة
       const localRoster = JSON.parse(localStorage.getItem("roster_students") || "[]");
       const localCache = JSON.parse(localStorage.getItem("student_roster_cache") || "[]");
       allStudents = [...localRoster, ...localCache];
       populateDatalist();
 
-      // 3. جلب سجلات المحاضر من السحابة لضمان ظهور أسماء زملائه ومقيديه حتى على جهاز الطالب
+      // 3. مزامنة كشوف الطلاب من السحابة لدعم الإكمال التلقائي
       if (lecturerEmail) {
         fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(lecturerEmail)}&_t=${Date.now()}`)
           .then(res => res.json())
           .then(res => {
             if (res.status === "success" && Array.isArray(res.records)) {
-              const seen = new Set(allStudents.map(s => (s.name || "").trim().toLowerCase()));
+              const seen = new Set(allStudents.map(s => (s.code || s.name || "").trim().toLowerCase()));
               res.records.forEach(r => {
-                const clean = (r.name || "").replace(" (يدوي)", "").trim();
-                if (clean && !seen.has(clean.toLowerCase())) {
-                  seen.add(clean.toLowerCase());
+                const cleanName = (r.name || "").replace(" (يدوي)", "").trim();
+                const cleanCode = (r.code || "").toString().trim();
+                const key = (cleanCode || cleanName).toLowerCase();
+                if (key && !seen.has(key)) {
+                  seen.add(key);
                   allStudents.push({
-                    name: clean,
+                    code: cleanCode,
+                    name: cleanName,
                     grade: r.grade || "",
                     group: r.group || "",
                     section: r.section || ""
@@ -235,18 +246,28 @@
       });
     }
 
-    // إكمال تلقائي للحقول بمجرد اختيار الاسم أو التطابق
+    // إكمال تلقائي عند إدخال الكود
+    function handleCodeLookup(val) {
+      if (!val) return;
+      const cleanVal = val.trim().toLowerCase();
+      const match = allStudents.find(s => s.code && s.code.toString().trim().toLowerCase() === cleanVal);
+      if (match) {
+        if (match.name) document.getElementById("fullName").value = match.name;
+        if (match.grade) document.getElementById("gradeLevel").value = match.grade;
+        if (match.group) document.getElementById("groupNo").value = match.group;
+        if (match.section) document.getElementById("sectionNo").value = match.section;
+      }
+    }
+
+    // إكمال تلقائي عند إدخال الاسم
     function handleAutoLookup(val) {
       if (!val) return;
       const cleanVal = val.trim().toLowerCase();
-      
-      const match = allStudents.find(s => 
-        (s.name && s.name.trim().toLowerCase() === cleanVal) || 
-        (s.id && s.id.toString().trim() === cleanVal)
-      );
-
+      const match = allStudents.find(s => s.name && s.name.trim().toLowerCase() === cleanVal);
       if (match) {
-        document.getElementById("fullName").value = match.name;
+        if (match.code && !document.getElementById("studentCode").value) {
+          document.getElementById("studentCode").value = match.code;
+        }
         if (match.grade) document.getElementById("gradeLevel").value = match.grade;
         if (match.group) document.getElementById("groupNo").value = match.group;
         if (match.section) document.getElementById("sectionNo").value = match.section;
@@ -266,7 +287,6 @@
       badge.style.display = "block";
     }
 
-    // فحص صلاحية الرمز (مهلة 90 ثانية كحد أقصى للمسح من الشاشة)
     const now = Date.now();
     const timeDiff = now - generatedTime;
     if (!generatedTime || timeDiff > 90000 || timeDiff < -30000) {
@@ -294,12 +314,14 @@
     }
 
     function submitAttendance() {
+      const studentCode = document.getElementById("studentCode").value.trim();
       const fullName = document.getElementById("fullName").value.trim();
       const grade = document.getElementById("gradeLevel").value.trim();
       const group = document.getElementById("groupNo").value.trim();
       const section = document.getElementById("sectionNo").value.trim();
       const btn = document.getElementById("subBtn");
 
+      if (!studentCode) return showMessage("يرجى إدخال كود الطالب / رقم الجلوس", "danger");
       if (!fullName || fullName.split(" ").length < 3) return showMessage("يرجى كتابة الاسم ثلاثياً أو رباعياً", "danger");
       if (!grade) return showMessage("يرجى اختيار الفرقة الدراسية", "danger");
       if (!group || !section) return showMessage("يرجى كتابة رقم المجموعة ورقم السكشن", "danger");
@@ -332,25 +354,29 @@
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
+              action: "recordAttendance",
               lecturerEmail: lecturerEmail,
+              courseTitle: courseTitle,
+              studentCode: studentCode,
               studentName: fullName,
               gradeLevel: grade,
               groupNo: group,
               sectionNo: section,
               deviceId: deviceId,
-              courseTitle: courseTitle,
               coords: `${uLat.toFixed(6)}, ${uLng.toFixed(6)}`,
               distance: dist
             })
           })
           .then(() => {
+            localStorage.setItem("saved_student_code", studentCode);
             localStorage.setItem("saved_student_name", fullName);
             localStorage.setItem("saved_student_grade", grade);
             localStorage.setItem("saved_student_group", group);
             localStorage.setItem("saved_student_section", section);
-            localStorage.setItem(sessionKey, fullName);
+            localStorage.setItem(sessionKey, studentCode);
 
             showMessage("تم تسجيل حضورك بنجاح وتوثيق بياناتك في كشف المحاضرة!", "success");
+            document.getElementById("studentCode").disabled = true;
             document.getElementById("fullName").disabled = true;
             document.getElementById("gradeLevel").disabled = true;
             document.getElementById("groupNo").disabled = true;

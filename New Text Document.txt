@@ -1,0 +1,239 @@
+var FOLDER_ID = "1EvHZ_r-Khqt2Oc3ocjKXqRVvO55FbveA";
+var SPREADSHEET_NAME = "سجل حضور الطلاب الموحد";
+
+function getDB() {
+  var folder = DriveApp.getFolderById(FOLDER_ID);
+  var files = folder.getFilesByName(SPREADSHEET_NAME);
+  var ss;
+  if (files.hasNext()) {
+    ss = SpreadsheetApp.open(files.next());
+  } else {
+    ss = SpreadsheetApp.create(SPREADSHEET_NAME);
+    var file = DriveApp.getFileById(ss.getId());
+    folder.addFile(file);
+    DriveApp.getRootFolder().removeFile(file);
+  }
+
+  // ورقة المستخدمين
+  var uSheet = ss.getSheetByName("Users");
+  if (!uSheet) {
+    uSheet = ss.insertSheet("Users");
+    uSheet.appendRow(["البريد الإلكتروني", "كلمة المرور", "الاسم الكامل", "القسم / الكلية"]);
+    uSheet.appendRow(["waleed@art.svu.edu.eg", "123456", "م. وليد عادل", "قسم الجغرافيا ونظم المعلومات"]);
+    uSheet.appendRow(["prof@art.svu.edu.eg", "123456", "د. محمد عبد الرحيم", "قسم الجغرافيا ونظم المعلومات"]);
+    uSheet.getRange("A1:D1").setFontWeight("bold").setBackground("#0f172a").setFontColor("#ffffff");
+  }
+
+  // ورقة الحضور الأساسية
+  var aSheet = ss.getSheetByName("Attendance_Master");
+  if (!aSheet) {
+    aSheet = ss.insertSheet("Attendance_Master");
+    aSheet.appendRow([
+      "م", "بريد المحاضر", "المقرر", "تاريخ الجلسة", "اسم الطالب", 
+      "الفرقة الدراسية", "رقم المجموعة", "رقم السكشن", "الوقت", 
+      "بصمة الجهاز", "المسافة (متر)", "الإحداثيات"
+    ]);
+    aSheet.getRange("A1:L1").setFontWeight("bold").setBackground("#0f172a").setFontColor("#ffffff");
+    aSheet.setFrozenRows(1);
+  }
+
+  // ورقة رصد أعمال السنة الشاملة (8 أعمدة)
+  var gSheet = ss.getSheetByName("Grades_Master");
+  if (!gSheet) {
+    gSheet = ss.insertSheet("Grades_Master");
+    gSheet.appendRow([
+      "بريد المحاضر", "المقرر الأساسي", "اسم الطالب", 
+      "درجة الحضور", "درجة العملي", "درجة الميدترم", "إجمالي أعمال السنة", "آخر تحديث"
+    ]);
+    gSheet.getRange("A1:H1").setFontWeight("bold").setBackground("#0f172a").setFontColor("#ffffff");
+    gSheet.setFrozenRows(1);
+  }
+
+  var def = ss.getSheetByName("ورقة1") || ss.getSheetByName("Sheet1");
+  if (def && ss.getSheets().length > 1) ss.deleteSheet(def);
+
+  return ss;
+}
+
+function doGet(e) {
+  e = e || {};
+  var params = e.parameter || {};
+  var action = (params.action || "").trim();
+  var ss = getDB();
+  var result = {};
+
+  // 1. تسجيل الدخول
+  if (action === "login") {
+    var email = (params.email || "").toString().trim().toLowerCase();
+    var pass = (params.password || "").toString().trim();
+    var uSheet = ss.getSheetByName("Users");
+    var uData = uSheet ? uSheet.getDataRange().getValues() : [];
+    var found = false;
+
+    for (var i = 1; i < uData.length; i++) {
+      if (uData[i][0].toString().trim().toLowerCase() === email && uData[i][1].toString().trim() === pass) {
+        result = { status: "success", user: { email: uData[i][0], name: uData[i][2], dept: uData[i][3] } };
+        found = true;
+        break;
+      }
+    }
+    if (!found) result = { status: "error", message: "بيانات الدخول غير صحيحة" };
+  }
+
+  // 2. جلب سجلات الحضور التراكمية
+  else if (action === "getCumulative") {
+    var lecturerEmail = (params.lecturerEmail || "").toString().trim().toLowerCase();
+    var aSheet = ss.getSheetByName("Attendance_Master");
+    var aData = aSheet ? aSheet.getDataRange().getValues() : [];
+    var records = [];
+
+    for (var k = 1; k < aData.length; k++) {
+      var rEmail = (aData[k][1] || "").toString().trim().toLowerCase();
+      if (rEmail === lecturerEmail) {
+        records.push({
+          serial: aData[k][0],
+          course: aData[k][2],
+          date: aData[k][3],
+          name: aData[k][4],
+          grade: aData[k][5],
+          group: aData[k][6],
+          section: aData[k][7],
+          time: aData[k][8]
+        });
+      }
+    }
+    result = { status: "success", records: records };
+  }
+
+  // 3. جلب درجات أعمال السنة المسجلة (العملي، الميدترم، الحضور، الإجمالي)
+  else if (action === "getSavedGrades") {
+    var lecturerEmail = (params.lecturerEmail || "").toString().trim().toLowerCase();
+    var baseCourse = (params.baseCourse || "").toString().trim().toLowerCase();
+    var gSheet = ss.getSheetByName("Grades_Master");
+    var gData = gSheet ? gSheet.getDataRange().getValues() : [];
+    var gradesMap = {};
+
+    for (var m = 1; m < gData.length; m++) {
+      var gEmail = (gData[m][0] || "").toString().trim().toLowerCase();
+      var gCourse = (gData[m][1] || "").toString().trim().toLowerCase();
+      var stName = (gData[m][2] || "").toString().trim();
+
+      if (gEmail === lecturerEmail && (!baseCourse || gCourse === baseCourse)) {
+        gradesMap[stName] = {
+          attScore: gData[m][3] !== "" ? gData[m][3] : 0,
+          practical: gData[m][4] !== "" ? gData[m][4] : 0,
+          midterm: gData[m][5] !== "" ? gData[m][5] : 0,
+          totalScore: gData[m][6] !== "" ? gData[m][6] : 0
+        };
+      }
+    }
+    result = { status: "success", grades: gradesMap };
+  }
+
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+
+  try {
+    var ss = getDB();
+    var data = JSON.parse(e.postData.contents);
+
+    // 1. حفظ سجل درجات أعمال السنة بالكامل من صفحة grades.html
+    if (data.action === "saveGrades") {
+      var gSheet = ss.getSheetByName("Grades_Master");
+      var lecturerEmail = (data.lecturerEmail || "").toString().trim().toLowerCase();
+      var baseCourse = (data.baseCourse || "").toString().trim();
+      var entries = data.entries || [];
+      var nowStr = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd HH:mm:ss");
+
+      // ترقية رأس الجدول إلى 8 أعمدة تلقائياً في حال وجوده بالصيغة القديمة
+      if (gSheet.getLastColumn() < 8) {
+        gSheet.getRange(1, 1, 1, 8).setValues([[
+          "بريد المحاضر", "المقرر الأساسي", "اسم الطالب", 
+          "درجة الحضور", "درجة العملي", "درجة الميدترم", "إجمالي أعمال السنة", "آخر تحديث"
+        ]]).setFontWeight("bold").setBackground("#0f172a").setFontColor("#ffffff");
+      }
+
+      var gData = gSheet.getDataRange().getValues();
+
+      entries.forEach(function(item) {
+        var stName = (item.name || "").toString().trim();
+        var foundRow = -1;
+
+        for (var r = 1; r < gData.length; r++) {
+          if (gData[r][0].toString().trim().toLowerCase() === lecturerEmail &&
+              gData[r][1].toString().trim().toLowerCase() === baseCourse.toLowerCase() &&
+              gData[r][2].toString().trim() === stName) {
+            foundRow = r + 1;
+            break;
+          }
+        }
+
+        var rowValues = [
+          item.attScore !== undefined ? item.attScore : 0,
+          item.practical !== undefined ? item.practical : 0, 
+          item.midterm !== undefined ? item.midterm : 0, 
+          item.totalScore !== undefined ? item.totalScore : 0, 
+          nowStr
+        ];
+
+        if (foundRow > -1) {
+          gSheet.getRange(foundRow, 4, 1, 5).setValues([rowValues]);
+        } else {
+          gSheet.appendRow([
+            lecturerEmail, 
+            baseCourse, 
+            stName, 
+            item.attScore !== undefined ? item.attScore : 0, 
+            item.practical !== undefined ? item.practical : 0, 
+            item.midterm !== undefined ? item.midterm : 0, 
+            item.totalScore !== undefined ? item.totalScore : 0, 
+            nowStr
+          ]);
+        }
+      });
+
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "تم حفظ الدرجات والإجمالي في الشيت بنجاح" })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 2. تسجيل حضور الطالب العادي
+    var aSheet = ss.getSheetByName("Attendance_Master");
+    var lecturerEmail = (data.lecturerEmail || "").toString().trim().toLowerCase();
+    var courseTitle   = (data.courseTitle || "عام").toString().trim();
+    var studentName   = (data.studentName || "").toString().trim();
+    var gradeLevel    = (data.gradeLevel || "-").toString().trim();
+    var groupNo       = (data.groupNo || "-").toString().trim();
+    var sectionNo     = (data.sectionNo || "-").toString().trim();
+    var deviceId      = (data.deviceId || "غير معروف").toString().trim();
+    var todayStr      = Utilities.formatDate(new Date(), "Africa/Cairo", "yyyy-MM-dd");
+    var timeStr       = Utilities.formatDate(new Date(), "Africa/Cairo", "HH:mm:ss");
+    var coords        = data.coords || "غير محدد";
+    var distance      = data.distance !== undefined ? Math.round(data.distance) : 0;
+
+    var allData = aSheet.getDataRange().getValues();
+    for (var i = 1; i < allData.length; i++) {
+      if (allData[i][1].toString().trim().toLowerCase() === lecturerEmail &&
+          allData[i][2].toString().trim().toLowerCase() === courseTitle.toLowerCase() &&
+          allData[i][3].toString().trim() === todayStr) {
+        if (allData[i][4].toString().trim() === studentName) {
+          return ContentService.createTextOutput(JSON.stringify({ status: "duplicate", message: "تم تسجيل هذا الاسم مسبقاً!" })).setMimeType(ContentService.MimeType.JSON);
+        }
+        if (deviceId !== "غير معروف" && allData[i][9].toString().trim() === deviceId) {
+          return ContentService.createTextOutput(JSON.stringify({ status: "duplicate_device", message: "تم التسجيل من هذا الهاتف بالفعل!" })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+    }
+
+    var nextSerial = aSheet.getLastRow();
+    aSheet.appendRow([nextSerial, lecturerEmail, courseTitle, todayStr, studentName, gradeLevel, groupNo, sectionNo, timeStr, deviceId, distance, coords]);
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "تم تسجيل الحضور بنجاح" })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}

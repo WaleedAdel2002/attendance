@@ -113,6 +113,55 @@
       border-radius: 6px;
       display: inline-block;
     }
+
+    /* ستايل زر التبديل لنشر أو إخفاء الدرجات */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-top: 15px;
+      width: fit-content;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--success);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
   </style>
 </head>
 <body>
@@ -134,12 +183,11 @@
       </div>
     </div>
 
-    <!-- فلاتر الحساب والتحكم -->
     <div class="card">
       <div class="controls-grid">
         <div>
           <label>اختر المقرر الأساسي</label>
-          <select id="baseCourseSelect" onchange="renderMatrixTable()"></select>
+          <select id="baseCourseSelect" onchange="onCourseChanged()"></select>
         </div>
         <div>
           <label>درجة الحضور</label>
@@ -151,22 +199,33 @@
         </div>
         <button class="btn btn-primary" onclick="loadData()">تحديث البيانات</button>
       </div>
+
+      <!-- زر التحكم في إظهار أو حجب الدرجات في البوابة للطلاب -->
+      <div class="switch-container">
+        <label class="switch">
+          <input type="checkbox" id="toggleGradesVis" onchange="updateCourseVisibility(this.checked)">
+          <span class="slider"></span>
+        </label>
+        <label for="toggleGradesVis" style="margin:0; font-size:13px; font-weight:bold; color:var(--navy); cursor:pointer;">
+          إتاحة إظهار درجات أعمال السنة للطلاب في البوابة لهذا المقرر
+        </label>
+        <span id="visStatusLabel" style="font-size:12px; color:#64748b;">(مخفية حالياً: يظهر الحضور فقط)</span>
+      </div>
     </div>
 
-    <!-- جدول مصفوفة الحضور والدرجات -->
     <div class="card" style="padding:15px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span style="font-weight:bold; font-size:14px;" id="matrixCount">عدد الطلاب: 0</span>
-        <span style="font-size:12px; color:#64748b;">درجات الحضور، العملي، الميدترم، والإجمالي تُحفظ مباشرة في ورقة Grades_Master بالسحابة</span>
+        <span style="font-size:12px; color:#64748b;">المعرف الأساسي للطالب هو (كود الطالب) مع عزل المقررات بالسحابة</span>
       </div>
 
       <div class="table-container">
         <table id="matrixTable">
           <thead id="matrixHead">
-            <tr><th>م</th><th>اسم الطالب</th><th>الفرقة</th><th>المجموعة</th></tr>
+            <tr><th>م</th><th>كود الطالب</th><th>اسم الطالب</th><th>الفرقة</th><th>المجموعة</th></tr>
           </thead>
           <tbody id="matrixBody">
-            <tr><td colspan="8" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
+            <tr><td colspan="9" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
           </tbody>
         </table>
       </div>
@@ -180,10 +239,12 @@
     let allRawRecords = [];
     let savedGradesMap = {};
     let courseGroups = {};
+    let visibilityMap = {};
 
     window.onload = function() {
       if (activeUser) {
         document.getElementById("profTag").innerText = `المحاضر: ${activeUser.name} (${activeUser.email})`;
+        savedGradesMap = JSON.parse(localStorage.getItem("grades_cache_code_" + activeUser.email) || "{}");
         loadData();
       } else {
         alert("يرجى تسجيل الدخول أولاً من الصفحة الرئيسية");
@@ -191,48 +252,9 @@
       }
     };
 
-    // 1. تنقية وتوحيد الحروف العربية
-    function normalizeArabic(text) {
-      if (!text) return "";
-      return text
-        .replace(/[أإآ]/g, "ا")
-        .replace(/ة/g, "ه")
-        .replace(/ى/g, "ي")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    // 2. التحقق الذكي هل الاسمان لنفس الطالب (مقارنة أول 3 مقاطع)
-    function isSameStudent(nameA, nameB) {
-      const normA = normalizeArabic(nameA);
-      const normB = normalizeArabic(nameB);
-
-      if (normA === normB) return true;
-
-      const partsA = normA.split(" ").filter(Boolean);
-      const partsB = normB.split(" ").filter(Boolean);
-
-      if (partsA.length >= 3 && partsB.length >= 3) {
-        return partsA[0] === partsB[0] &&
-               partsA[1] === partsB[1] &&
-               partsA[2] === partsB[2];
-      }
-
-      const minLen = Math.min(partsA.length, partsB.length);
-      if (minLen >= 3) {
-        for (let i = 0; i < minLen; i++) {
-          if (partsA[i] !== partsB[i]) return false;
-        }
-        return true;
-      }
-
-      return false;
-    }
-
     function parseCourseName(raw) {
       if (!raw) return { base: "عام", session: "1" };
       let str = raw.trim();
-
       const match = str.match(/^(.*?)[_\s-]*([0-9\u0660-\u0669]+)$/);
       if (match) {
         let base = match[1].replace(/محاضرة|سكشن/g, "").trim();
@@ -243,7 +265,6 @@
 
     function loadData() {
       if (!activeUser) return;
-      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="10" style="padding:25px; color:#0284c7;">جاري سحب السجلات ومصفوفة الحضور...</td></tr>';
 
       const p1 = fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
         .then(r => r.json());
@@ -252,29 +273,35 @@
         .then(r => r.json())
         .catch(() => ({ status: "bypass", grades: {} }));
 
-      Promise.allSettled([p1, p2]).then(results => {
+      const p3 = fetch(`${SCRIPT_URL}?action=getVisibility&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
+        .then(r => r.json())
+        .catch(() => ({ status: "bypass", visibility: {} }));
+
+      Promise.allSettled([p1, p2, p3]).then(results => {
         const resAttendance = results[0].status === "fulfilled" ? results[0].value : null;
         const resGrades = results[1].status === "fulfilled" ? results[1].value : null;
+        const resVis = results[2].status === "fulfilled" ? results[2].value : null;
 
         if (resAttendance && resAttendance.status === "success" && Array.isArray(resAttendance.records)) {
           allRawRecords = resAttendance.records;
-        } else {
-          allRawRecords = [];
         }
 
         if (resGrades && resGrades.status === "success" && resGrades.grades) {
-          savedGradesMap = resGrades.grades;
+          savedGradesMap = Object.assign({}, savedGradesMap, resGrades.grades);
+          localStorage.setItem("grades_cache_code_" + activeUser.email, JSON.stringify(savedGradesMap));
+        }
+
+        if (resVis && resVis.status === "success" && resVis.visibility) {
+          visibilityMap = resVis.visibility;
         }
 
         organizeCourses();
         populateCourseDropdown();
-        renderMatrixTable();
-      }).catch(() => {
-        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="10" style="color:red; padding:20px;">تعذر استرجاع البيانات، تأكد من الاتصال بالإنترنت.</td></tr>';
+        onCourseChanged();
       });
     }
 
-    // 3. تجميع المقررات وتوحيد سجلات الطالب الثلاثية والرباعية تلقائياً
+    // تجميع الطلاب حسب (كود الطالب) كمعرف أساسي
     function organizeCourses() {
       courseGroups = {};
       allRawRecords.forEach(r => {
@@ -284,31 +311,28 @@
         }
         courseGroups[parsed.base].sessions.add(parsed.session);
 
+        // الكود هو المعرف الأساسي، وفي حال غيابه يتم استخدام الاسم كبديل مؤقت
+        const stCode = (r.code || r.name || "").toString().trim();
         const currentName = (r.name || "").replace(" (يدوي)", "").trim();
-        if (!currentName) return;
+        if (!stCode) return;
 
         const studentsObj = courseGroups[parsed.base].students;
 
-        // فحص هل الطالب موجود مسبقاً باسم ثلاثي أو رباعي
-        let targetName = Object.keys(studentsObj).find(existing => isSameStudent(existing, currentName));
-
-        if (!targetName) {
-          targetName = currentName;
-          studentsObj[targetName] = {
+        if (!studentsObj[stCode]) {
+          studentsObj[stCode] = {
+            code: stCode,
+            name: currentName || stCode,
             grade: r.grade || "-",
             group: r.group || "-",
             attendedSessions: new Set()
           };
         } else {
-          // ترقية المفتاح للاسم الأطول والأكثر تفصيلاً
-          if (currentName.split(" ").length > targetName.split(" ").length) {
-            studentsObj[currentName] = studentsObj[targetName];
-            delete studentsObj[targetName];
-            targetName = currentName;
+          // في حال تسجيل الطالب باسم أطول أو أدق لاحقاً تحت نفس الكود يتم تحديث الاسم
+          if (currentName && currentName.split(" ").length > studentsObj[stCode].name.split(" ").length) {
+            studentsObj[stCode].name = currentName;
           }
         }
-
-        studentsObj[targetName].attendedSessions.add(parsed.session);
+        studentsObj[stCode].attendedSessions.add(parsed.session);
       });
     }
 
@@ -330,9 +354,48 @@
         select.appendChild(opt);
       });
 
-      if (currentVal && bases.includes(currentVal)) {
-        select.value = currentVal;
+      if (currentVal && bases.includes(currentVal)) select.value = currentVal;
+    }
+
+    function onCourseChanged() {
+      renderMatrixTable();
+      updateVisibilityUI();
+    }
+
+    function updateVisibilityUI() {
+      const baseCourse = document.getElementById("baseCourseSelect").value;
+      const isVis = visibilityMap[baseCourse] === true;
+      const toggle = document.getElementById("toggleGradesVis");
+      const label = document.getElementById("visStatusLabel");
+
+      toggle.checked = isVis;
+      if (isVis) {
+        label.innerText = "(معروضة للطلاب في البوابة)";
+        label.style.color = "var(--success)";
+      } else {
+        label.innerText = "(مخفية حالياً: يظهر الحضور فقط)";
+        label.style.color = "#64748b";
       }
+    }
+
+    function updateCourseVisibility(isChecked) {
+      const baseCourse = document.getElementById("baseCourseSelect").value;
+      if (!baseCourse) return;
+
+      visibilityMap[baseCourse] = isChecked;
+      updateVisibilityUI();
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "toggleVisibility",
+          lecturerEmail: activeUser.email,
+          baseCourse: baseCourse,
+          showGrades: isChecked
+        })
+      });
     }
 
     function renderMatrixTable() {
@@ -342,27 +405,24 @@
       const tbody = document.getElementById("matrixBody");
 
       if (!baseCourse || !courseGroups[baseCourse]) {
-        tbody.innerHTML = '<tr><td colspan="10" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
         document.getElementById("matrixCount").innerText = "عدد الطلاب: 0";
         return;
       }
 
-      const sessions = Array.from(courseGroups[baseCourse].sessions).sort((a,b) => {
-        return (parseInt(a) || 0) - (parseInt(b) || 0);
-      });
+      const sessions = Array.from(courseGroups[baseCourse].sessions).sort((a,b) => (parseInt(a) || 0) - (parseInt(b) || 0));
       const totalSessions = sessions.length;
       const studentsObj = courseGroups[baseCourse].students;
 
+      // عمود كود الطالب بجانب اسم الطالب
       let headHTML = `<tr>
         <th>م</th>
+        <th>كود الطالب</th>
         <th>اسم الطالب</th>
         <th>الفرقة</th>
         <th>المجموعة</th>`;
       
-      sessions.forEach(s => {
-        headHTML += `<th>جلسة (${s})</th>`;
-      });
-
+      sessions.forEach(s => { headHTML += `<th>جلسة (${s})</th>`; });
       headHTML += `
         <th>الحضور (${totalSessions})</th>
         <th>درجة الحضور (${maxAttScore})</th>
@@ -375,40 +435,37 @@
       tbody.innerHTML = "";
       let count = 0;
 
-      Object.keys(studentsObj).sort().forEach(name => {
-        const info = studentsObj[name];
+      Object.keys(studentsObj).sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(code => {
+        const info = studentsObj[code];
         if (groupFilter && info.group.toString().trim() !== groupFilter) return;
         count++;
 
         const attendedCount = info.attendedSessions.size;
         const attendanceScore = totalSessions > 0 ? ((attendedCount / totalSessions) * maxAttScore).toFixed(1) : 0;
 
-        // البحث عن الدرجات المحفوظة مع مطابقة الأسماء الذكية
-        let saved = savedGradesMap[name];
-        if (!saved) {
-          const matchedSavedKey = Object.keys(savedGradesMap).find(k => isSameStudent(k, name));
-          saved = matchedSavedKey ? savedGradesMap[matchedSavedKey] : { practical: 0, midterm: 0 };
-        }
+        // قراءة الدرجة عبر المفتاح المركب المعتمد على الكود
+        const compositeKey = baseCourse + "___" + code;
+        let saved = savedGradesMap[compositeKey] || savedGradesMap[baseCourse + "___" + info.name] || { practical: 0, midterm: 0 };
+
+        let pVal = saved.practical !== undefined ? saved.practical : 0;
+        let mVal = saved.midterm !== undefined ? saved.midterm : 0;
 
         let rowHTML = `<tr>
           <td>${count}</td>
-          <td style="text-align:right; font-weight:bold;">${name}</td>
+          <td style="font-weight:bold; color:var(--primary);">${code}</td>
+          <td style="text-align:right; font-weight:bold;">${info.name}</td>
           <td>${info.grade}</td>
           <td>${info.group}</td>`;
 
         sessions.forEach(s => {
-          if (info.attendedSessions.has(s)) {
-            rowHTML += `<td class="check-yes">✔</td>`;
-          } else {
-            rowHTML += `<td class="check-no">✖</td>`;
-          }
+          rowHTML += info.attendedSessions.has(s) ? `<td class="check-yes">✔</td>` : `<td class="check-no">✖</td>`;
         });
 
         rowHTML += `
           <td><strong>${attendedCount}</strong></td>
           <td id="att_score_${count}">${attendanceScore}</td>
-          <td><input type="number" class="grade-input practical-in" data-name="${name}" value="${saved.practical || 0}" oninput="updateRowTotal(this)"></td>
-          <td><input type="number" class="grade-input midterm-in" data-name="${name}" value="${saved.midterm || 0}" oninput="updateRowTotal(this)"></td>
+          <td><input type="number" class="grade-input practical-in" data-code="${code}" data-name="${info.name}" value="${pVal}" oninput="updateRowTotal(this)"></td>
+          <td><input type="number" class="grade-input midterm-in" data-code="${code}" data-name="${info.name}" value="${mVal}" oninput="updateRowTotal(this)"></td>
           <td><span class="total-badge row-total">0</span></td>
         </tr>`;
 
@@ -421,11 +478,25 @@
 
     function updateRowTotal(el) {
       const row = el.closest("tr");
+      const baseCourse = document.getElementById("baseCourseSelect").value;
       const attScore = parseFloat(row.querySelector('[id^="att_score_"]').innerText) || 0;
       const practical = parseFloat(row.querySelector(".practical-in").value) || 0;
       const midterm = parseFloat(row.querySelector(".midterm-in").value) || 0;
       const total = (attScore + practical + midterm).toFixed(1);
       row.querySelector(".row-total").innerText = total;
+
+      // حفظ فوري في الكاش بمفتاح (المقرر + كود الطالب)
+      const code = row.querySelector(".practical-in").getAttribute("data-code");
+      const name = row.querySelector(".practical-in").getAttribute("data-name");
+      const compositeKey = baseCourse + "___" + code;
+      
+      if (!savedGradesMap[compositeKey]) savedGradesMap[compositeKey] = {};
+      savedGradesMap[compositeKey].code = code;
+      savedGradesMap[compositeKey].name = name;
+      savedGradesMap[compositeKey].practical = practical;
+      savedGradesMap[compositeKey].midterm = midterm;
+      savedGradesMap[compositeKey].totalScore = total;
+      localStorage.setItem("grades_cache_code_" + activeUser.email, JSON.stringify(savedGradesMap));
     }
 
     function recalculateTotals() {
@@ -447,17 +518,28 @@
         const totEl = row.querySelector(".row-total");
 
         if (pIn && mIn && attEl && totEl) {
+          const stCode = pIn.getAttribute("data-code");
+          const stName = pIn.getAttribute("data-name");
+          const pVal = parseFloat(pIn.value) || 0;
+          const mVal = parseFloat(mIn.value) || 0;
+          const aVal = parseFloat(attEl.innerText) || 0;
+          const tVal = parseFloat(totEl.innerText) || 0;
+
           entries.push({
-            name: pIn.getAttribute("data-name"),
-            attScore: parseFloat(attEl.innerText) || 0,
-            practical: parseFloat(pIn.value) || 0,
-            midterm: parseFloat(mIn.value) || 0,
-            totalScore: parseFloat(totEl.innerText) || 0
+            code: stCode,
+            name: stName,
+            attScore: aVal,
+            practical: pVal,
+            midterm: mVal,
+            totalScore: tVal
           });
+
+          const compositeKey = baseCourse + "___" + stCode;
+          savedGradesMap[compositeKey] = { code: stCode, name: stName, attScore: aVal, practical: pVal, midterm: mVal, totalScore: tVal };
         }
       });
 
-      if (entries.length === 0) return alert("لا توجد بيانات لحفظها");
+      localStorage.setItem("grades_cache_code_" + activeUser.email, JSON.stringify(savedGradesMap));
 
       const btn = document.getElementById("saveBtn");
       btn.innerText = "جاري الحفظ في الشيت...";
@@ -476,11 +558,11 @@
       }).then(() => {
         btn.innerText = "💾 حفظ التعديلات في الشيت";
         btn.disabled = false;
-        alert("تم حفظ درجات الحضور والعملي والميدترم والإجمالي في Google Drive بنجاح!");
+        alert(`تم حفظ درجات مقرر (${baseCourse}) بالكود الجامعي بنجاح!`);
       }).catch(() => {
         btn.innerText = "💾 حفظ التعديلات في الشيت";
         btn.disabled = false;
-        alert("حدث خطأ أثناء الاتصال بالسيرفر");
+        alert("تم الحفظ محلياً، تحقق من اتصال الإنترنت لرفع الشيت");
       });
     }
 
@@ -488,22 +570,22 @@
       const baseCourse = document.getElementById("baseCourseSelect").value;
       if (!baseCourse) return alert("يرجى اختيار المقرر أولاً");
 
-      let csv = "\uFEFFم,اسم الطالب,الفرقة,المجموعة,عدد المحاضرات,درجة الحضور,درجة العملي,درجة الميدترم,إجمالي أعمال السنة\n";
-      
+      let csv = "\uFEFFم,كود الطالب,اسم الطالب,الفرقة,المجموعة,عدد المحاضرات,درجة الحضور,درجة العملي,درجة الميدترم,إجمالي أعمال السنة\n";
       document.querySelectorAll("#matrixBody tr").forEach(row => {
         const cols = row.querySelectorAll("td");
-        if (cols.length > 4) {
+        if (cols.length > 5) {
           const m = cols[0].innerText;
-          const name = `"${cols[1].innerText}"`;
-          const grade = cols[2].innerText;
-          const grp = cols[3].innerText;
+          const code = `"${cols[1].innerText}"`;
+          const name = `"${cols[2].innerText}"`;
+          const grade = cols[3].innerText;
+          const grp = cols[4].innerText;
           const pIn = row.querySelector(".practical-in").value;
           const mIn = row.querySelector(".midterm-in").value;
           const tot = row.querySelector(".row-total").innerText;
           const attScore = row.querySelector('[id^="att_score_"]').innerText;
           const attCount = cols[cols.length - 5].innerText;
 
-          csv += `${m},${name},${grade},${grp},${attCount},${attScore},${pIn},${mIn},${tot}\n`;
+          csv += `${m},${code},${name},${grade},${grp},${attCount},${attScore},${pIn},${mIn},${tot}\n`;
         }
       });
 
