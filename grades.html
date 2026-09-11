@@ -157,7 +157,7 @@
     <div class="card" style="padding:15px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span style="font-weight:bold; font-size:14px;" id="matrixCount">عدد الطلاب: 0</span>
-        <span style="font-size:12px; color:#64748b;">درجات العملي والميدترم تُحفظ في ورقة Grades_Master بالسحابة</span>
+        <span style="font-size:12px; color:#64748b;">درجات الحضور، العملي، الميدترم، والإجمالي تُحفظ مباشرة في ورقة Grades_Master بالسحابة</span>
       </div>
 
       <div class="table-container">
@@ -318,7 +318,7 @@
       </tr>`;
       document.getElementById("matrixHead").innerHTML = headHTML;
 
-      // 2. تعبئة صفوف الطلاب مع فلترة المجموعة فقط
+      // 2. تعبئة صفوف الطلاب
       tbody.innerHTML = "";
       let count = 0;
 
@@ -376,6 +376,7 @@
       });
     }
 
+    // حفظ درجات الحضور والعملي والميدترم والمجموع في الشيت
     function saveGradesToCloud() {
       const baseCourse = document.getElementById("baseCourseSelect").value;
       if (!baseCourse) return alert("يرجى اختيار المقرر أولاً");
@@ -384,11 +385,16 @@
       document.querySelectorAll("#matrixBody tr").forEach(row => {
         const pIn = row.querySelector(".practical-in");
         const mIn = row.querySelector(".midterm-in");
-        if (pIn && mIn) {
+        const attEl = row.querySelector('[id^="att_score_"]');
+        const totEl = row.querySelector(".row-total");
+
+        if (pIn && mIn && attEl && totEl) {
           entries.push({
             name: pIn.getAttribute("data-name"),
+            attScore: parseFloat(attEl.innerText) || 0,
             practical: parseFloat(pIn.value) || 0,
-            midterm: parseFloat(mIn.value) || 0
+            midterm: parseFloat(mIn.value) || 0,
+            totalScore: parseFloat(totEl.innerText) || 0
           });
         }
       });
@@ -412,7 +418,7 @@
       }).then(() => {
         btn.innerText = "💾 حفظ التعديلات في الشيت";
         btn.disabled = false;
-        alert("تم حفظ درجات أعمال السنة في Google Drive بنجاح!");
+        alert("تم حفظ درجات الحضور والعملي والميدترم والإجمالي في Google Drive بنجاح!");
       }).catch(() => {
         btn.innerText = "💾 حفظ التعديلات في الشيت";
         btn.disabled = false;
