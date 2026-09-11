@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منظومة رصد أعمال السنة ومصفوفة الحضور</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --navy: #0f172a;
+      --success: #16a34a;
+      --border: #cbd5e1;
+      --bg: #f8fafc;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      margin: 0;
+      padding: 20px;
+    }
+    .container { max-width: 1350px; margin: auto; }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 22px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      margin-bottom: 20px;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 800px) { .controls-grid { grid-template-columns: 1fr; } }
+    label { font-size: 13px; font-weight: bold; color: #475569; display: block; margin-bottom: 6px; }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+    .btn-primary { background: var(--primary); }
+    .btn-success { background: var(--success); }
+    .btn-navy { background: var(--navy); }
+    
+    .table-container {
+      overflow-x: auto;
+      max-height: 560px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 13px;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px 8px;
+      border: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    th {
+      background: #f1f5f9;
+      color: var(--navy);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .check-yes { color: #16a34a; font-weight: bold; font-size: 16px; }
+    .check-no { color: #cbd5e1; font-size: 14px; }
+    .grade-input {
+      width: 65px;
+      text-align: center;
+      padding: 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .total-badge {
+      background: #e0f2fe;
+      color: #0369a1;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-bar">
+      <div>
+        <h2 style="margin:0 0 5px; color:var(--navy);">منظومة رصد أعمال السنة ومصفوفة الحضور</h2>
+        <span style="font-size:13px; color:#64748b;" id="profTag">المحاضر: جاري التحقق...</span>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-success" onclick="saveGradesToCloud()">
+          💾 حفظ التعديلات في الشيت
+        </button>
+        <button class="btn btn-navy" onclick="exportMatrixCSV()">
+          📊 تصدير Excel للمنصة
+        </button>
+        <a href="index.html" class="btn" style="background:#64748b; text-decoration:none;">الرئيسية</a>
+      </div>
+    </div>
+
+    <!-- فلاتر الحساب والتحكم -->
+    <div class="card">
+      <div class="controls-grid">
+        <div>
+          <label>اختر المقرر الأساسي (مثال: كاد)</label>
+          <select id="baseCourseSelect" onchange="renderMatrixTable()"></select>
+        </div>
+        <div>
+          <label>الدرجة المخصصة للحضور</label>
+          <input type="number" id="maxAttendanceScore" value="10" min="0" max="100" oninput="recalculateTotals()">
+        </div>
+        <div>
+          <label>فلترة السكشن (اختياري)</label>
+          <input type="text" id="secFilter" placeholder="الكل" oninput="renderMatrixTable()">
+        </div>
+        <button class="btn btn-primary" onclick="loadData()">تحديث البيانات</button>
+      </div>
+    </div>
+
+    <!-- جدول المصفوفة -->
+    <div class="card" style="padding:15px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-weight:bold; font-size:14px;" id="matrixCount">عدد الطلاب: 0</span>
+        <span style="font-size:12px; color:#64748b;">يتم حفظ درجات العملي والميدترم تلقائياً في السحابة بمجرد الضغط على زر الحفظ</span>
+      </div>
+
+      <div class="table-container">
+        <table id="matrixTable">
+          <thead id="matrixHead">
+            <tr><th>م</th><th>اسم الطالب</th><th>الفرقة</th><th>السكشن</th></tr>
+          </thead>
+          <tbody id="matrixBody">
+            <tr><td colspan="6" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSOBgR0KLCgDLBZYsiFcmG1EXMIMJE-ZEtOidFNTSS3FIZRvlGpIycZd_leld5MU-k/exec";
+    let activeUser = JSON.parse(localStorage.getItem("auth_user") || sessionStorage.getItem("auth_user") || "null");
+
+    let allRawRecords = [];
+    let savedGradesMap = {};
+    let courseGroups = {}; // تجزئة المقررات الأساسية وجلساتها
+
+    window.onload = function() {
+      if (activeUser) {
+        document.getElementById("profTag").innerText = `المحاضر: ${activeUser.name} (${activeUser.email})`;
+        loadData();
+      } else {
+        alert("يرجى تسجيل الدخول أولاً من الصفحة الرئيسية");
+        window.location.href = "index.html";
+      }
+    };
+
+    // استخلاص الاسم الأساسي (مثال: "كاد 1" تصبح الأساس: "كاد" والجلسة: "1")
+    function parseCourseName(fullCourse) {
+      if (!fullCourse) return { base: "عام", session: "1" };
+      const str = fullCourse.trim();
+      const match = str.match(/^(.*?)\s*(\d+)$/);
+      if (match) {
+        return { base: match[1].trim() || str, session: match[2] };
+      }
+      return { base: str, session: "1" };
+    }
+
+    function loadData() {
+      if (!activeUser) return;
+      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="8" style="padding:25px;">جاري جلب السجلات والدرجات من السحابة...</td></tr>';
+
+      // 1. جلب سجلات الحضور
+      fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.status === "success" && Array.isArray(res.records)) {
+            allRawRecords = res.records;
+            organizeCourses();
+
+            // 2. جلب الدرجات المحفوظة في Grades_Master
+            fetch(`${SCRIPT_URL}?action=getSavedGrades&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
+              .then(gr => gr.json())
+              .then(gRes => {
+                if (gRes.status === "success" && gRes.grades) {
+                  savedGradesMap = gRes.grades;
+                }
+                populateCourseDropdown();
+                renderMatrixTable();
+              });
+          }
+        });
+    }
+
+    function organizeCourses() {
+      courseGroups = {};
+      allRawRecords.forEach(r => {
+        const parsed = parseCourseName(r.course);
+        if (!courseGroups[parsed.base]) {
+          courseGroups[parsed.base] = { sessions: new Set(), students: {} };
+        }
+        courseGroups[parsed.base].sessions.add(parsed.session);
+
+        const stName = (r.name || "").trim();
+        if (!courseGroups[parsed.base].students[stName]) {
+          courseGroups[parsed.base].students[stName] = {
+            grade: r.grade || "-",
+            group: r.group || "-",
+            section: r.section || "-",
+            attendedSessions: new Set()
+          };
+        }
+        courseGroups[parsed.base].students[stName].attendedSessions.add(parsed.session);
+      });
+    }
+
+    function populateCourseDropdown() {
+      const select = document.getElementById("baseCourseSelect");
+      const currentVal = select.value;
+      select.innerHTML = "";
+      const bases = Object.keys(courseGroups);
+
+      if (bases.length === 0) {
+        select.innerHTML = '<option value="">لا توجد مقررات مسجلة بعد</option>';
+        return;
+      }
+
+      bases.forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b;
+        opt.innerText = `مقرر: ${b} (${courseGroups[b].sessions.size} جلسات/محاضرات)`;
+        select.appendChild(opt);
+      });
+
+      if (currentVal && bases.includes(currentVal)) {
+        select.value = currentVal;
+      }
+    }
+
+    function renderMatrixTable() {
+      const baseCourse = document.getElementById("baseCourseSelect").value;
+      const secFilter = document.getElementById("secFilter").value.trim();
+      const maxAttScore = parseFloat(document.getElementById("maxAttendanceScore").value) || 10;
+
+      if (!baseCourse || !courseGroups[baseCourse]) {
+        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="6">لا توجد بيانات متاحة لهذا المقرر</td></tr>';
+        return;
+      }
+
+      const sessions = Array.from(courseGroups[baseCourse].sessions).sort((a,b) => parseInt(a) - parseInt(b));
+      const totalSessions = sessions.length;
+      const studentsObj = courseGroups[baseCourse].students;
+
+      // بناء رأس الجدول ديناميكياً
+      let headHTML = `<tr>
+        <th>م</th>
+        <th>اسم الطالب</th>
+        <th>الفرقة</th>
+        <th>السكشن</th>`;
+      
+      sessions.forEach(s => {
+        headHTML += `<th>محاضرة/سكشن (${s})</th>`;
+      });
+
+      headHTML += `
+        <th>الحضور (${totalSessions})</th>
+        <th>درجة الحضور (${maxAttScore})</th>
+        <th>العملي</th>
+        <th>الميدترم</th>
+        <th>مجموع أعمال السنة</th>
+      </tr>`;
+      document.getElementById("matrixHead").innerHTML = headHTML;
+
+      // بناء صفوف الطلاب
+      const tbody = document.getElementById("matrixBody");
+      tbody.innerHTML = "";
+      let count = 0;
+
+      Object.keys(studentsObj).sort().forEach(name => {
+        const info = studentsObj[name];
+        if (secFilter && info.section != secFilter) return;
+        count++;
+
+        const attendedCount = info.attendedSessions.size;
+        const attendanceScore = totalSessions > 0 ? ((attendedCount / totalSessions) * maxAttScore).toFixed(1) : 0;
+
+        // استرجاع درجات العملي والميدترم المحفوظة مسبقاً
+        const saved = savedGradesMap[name] || { practical: 0, midterm: 0 };
+
+        let rowHTML = `<tr>
+          <td>${count}</td>
+          <td style="text-align:right; font-weight:bold;">${name}</td>
+          <td>${info.grade}</td>
+          <td>${info.section}</td>`;
+
+        sessions.forEach(s => {
+          if (info.attendedSessions.has(s)) {
+            rowHTML += `<td class="check-yes">✔</td>`;
+          } else {
+            rowHTML += `<td class="check-no">✖</td>`;
+          }
+        });
+
+        rowHTML += `
+          <td><strong>${attendedCount}</strong></td>
+          <td id="att_score_${count}">${attendanceScore}</td>
+          <td><input type="number" class="grade-input practical-in" data-name="${name}" value="${saved.practical}" oninput="updateRowTotal(this)"></td>
+          <td><input type="number" class="grade-input midterm-in" data-name="${name}" value="${saved.midterm}" oninput="updateRowTotal(this)"></td>
+          <td><span class="total-badge row-total">0</span></td>
+        </tr>`;
+
+        tbody.innerHTML += rowHTML;
+      });
+
+      document.getElementById("matrixCount").innerText = `عدد الطلاب: ${count}`;
+      recalculateTotals();
+    }
+
+    function updateRowTotal(el) {
+      const row = el.closest("tr");
+      const attScore = parseFloat(row.querySelector('[id^="att_score_"]').innerText) || 0;
+      const practical = parseFloat(row.querySelector(".practical-in").value) || 0;
+      const midterm = parseFloat(row.querySelector(".midterm-in").value) || 0;
+      const total = (attScore + practical + midterm).toFixed(1);
+      row.querySelector(".row-total").innerText = total;
+    }
+
+    function recalculateTotals() {
+      document.querySelectorAll("#matrixBody tr").forEach(row => {
+        const el = row.querySelector(".practical-in");
+        if (el) updateRowTotal(el);
+      });
+    }
+
+    // حفظ الدرجات في جدول Grades_Master على Google Drive
+    function saveGradesToCloud() {
+      const baseCourse = document.getElementById("baseCourseSelect").value;
+      if (!baseCourse) return alert("اختر المقرر أولاً");
+
+      const entries = [];
+      document.querySelectorAll("#matrixBody tr").forEach(row => {
+        const pIn = row.querySelector(".practical-in");
+        const mIn = row.querySelector(".midterm-in");
+        if (pIn && mIn) {
+          entries.push({
+            name: pIn.getAttribute("data-name"),
+            practical: parseFloat(pIn.value) || 0,
+            midterm: parseFloat(mIn.value) || 0
+          });
+        }
+      });
+
+      if (entries.length === 0) return alert("لا توجد بيانات لحفظها");
+
+      const saveBtn = event.target;
+      saveBtn.innerText = "جاري الحفظ في الشيت...";
+      saveBtn.disabled = true;
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "saveGrades",
+          lecturerEmail: activeUser.email,
+          baseCourse: baseCourse,
+          entries: entries
+        })
+      }).then(() => {
+        saveBtn.innerText = "💾 حفظ التعديلات في الشيت";
+        saveBtn.disabled = false;
+        alert("تم حفظ درجات أعمال السنة في Google Drive بنجاح!");
+      }).catch(() => {
+        saveBtn.innerText = "💾 حفظ التعديلات في الشيت";
+        saveBtn.disabled = false;
+        alert("حدث خطأ أثناء الحفظ، تحقق من الإنترنت");
+      });
+    }
+
+    // تصدير الكشف النهائي بملف Excel متوافق مع المنصات الجامعية
+    function exportMatrixCSV() {
+      const baseCourse = document.getElementById("baseCourseSelect").value;
+      if (!baseCourse) return alert("اختر المقرر أولاً");
+
+      let csv = "\uFEFFم,اسم الطالب,الفرقة,السكشن,عدد المحاضرات,درجة الحضور,درجة العملي,درجة الميدترم,إجمالي أعمال السنة\n";
+      
+      document.querySelectorAll("#matrixBody tr").forEach(row => {
+        const cols = row.querySelectorAll("td");
+        if (cols.length > 5) {
+          const m = cols[0].innerText;
+          const name = `"${cols[1].innerText}"`;
+          const grade = cols[2].innerText;
+          const sec = cols[3].innerText;
+          const pIn = row.querySelector(".practical-in").value;
+          const mIn = row.querySelector(".midterm-in").value;
+          const tot = row.querySelector(".row-total").innerText;
+          const attScore = row.querySelector('[id^="att_score_"]').innerText;
+          const attCount = cols[cols.length - 5].innerText;
+
+          csv += `${m},${name},${grade},${sec},${attCount},${attScore},${pIn},${mIn},${tot}\n`;
+        }
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `أعمال_سنة_${baseCourse}_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+  </script>
+</body>
+</html>
