@@ -166,7 +166,7 @@
             <tr><th>م</th><th>اسم الطالب</th><th>الفرقة</th><th>المجموعة</th></tr>
           </thead>
           <tbody id="matrixBody">
-            <tr><td colspan="7" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
+            <tr><td colspan="8" style="padding:25px; color:#94a3b8;">جاري استخراج مصفوفة الحضور...</td></tr>
           </tbody>
         </table>
       </div>
@@ -191,6 +191,44 @@
       }
     };
 
+    // 1. تنقية وتوحيد الحروف العربية
+    function normalizeArabic(text) {
+      if (!text) return "";
+      return text
+        .replace(/[أإآ]/g, "ا")
+        .replace(/ة/g, "ه")
+        .replace(/ى/g, "ي")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    // 2. التحقق الذكي هل الاسمان لنفس الطالب (مقارنة أول 3 مقاطع)
+    function isSameStudent(nameA, nameB) {
+      const normA = normalizeArabic(nameA);
+      const normB = normalizeArabic(nameB);
+
+      if (normA === normB) return true;
+
+      const partsA = normA.split(" ").filter(Boolean);
+      const partsB = normB.split(" ").filter(Boolean);
+
+      if (partsA.length >= 3 && partsB.length >= 3) {
+        return partsA[0] === partsB[0] &&
+               partsA[1] === partsB[1] &&
+               partsA[2] === partsB[2];
+      }
+
+      const minLen = Math.min(partsA.length, partsB.length);
+      if (minLen >= 3) {
+        for (let i = 0; i < minLen; i++) {
+          if (partsA[i] !== partsB[i]) return false;
+        }
+        return true;
+      }
+
+      return false;
+    }
+
     function parseCourseName(raw) {
       if (!raw) return { base: "عام", session: "1" };
       let str = raw.trim();
@@ -205,7 +243,7 @@
 
     function loadData() {
       if (!activeUser) return;
-      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="9" style="padding:25px; color:#0284c7;">جاري سحب السجلات ومصفوفة الحضور...</td></tr>';
+      document.getElementById("matrixBody").innerHTML = '<tr><td colspan="10" style="padding:25px; color:#0284c7;">جاري سحب السجلات ومصفوفة الحضور...</td></tr>';
 
       const p1 = fetch(`${SCRIPT_URL}?action=getCumulative&lecturerEmail=${encodeURIComponent(activeUser.email)}&_t=${Date.now()}`)
         .then(r => r.json());
@@ -232,10 +270,11 @@
         populateCourseDropdown();
         renderMatrixTable();
       }).catch(() => {
-        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="9" style="color:red; padding:20px;">تعذر استرجاع البيانات، تأكد من الاتصال بالإنترنت.</td></tr>';
+        document.getElementById("matrixBody").innerHTML = '<tr><td colspan="10" style="color:red; padding:20px;">تعذر استرجاع البيانات، تأكد من الاتصال بالإنترنت.</td></tr>';
       });
     }
 
+    // 3. تجميع المقررات وتوحيد سجلات الطالب الثلاثية والرباعية تلقائياً
     function organizeCourses() {
       courseGroups = {};
       allRawRecords.forEach(r => {
@@ -245,15 +284,31 @@
         }
         courseGroups[parsed.base].sessions.add(parsed.session);
 
-        const stName = (r.name || "").replace(" (يدوي)", "").trim();
-        if (!courseGroups[parsed.base].students[stName]) {
-          courseGroups[parsed.base].students[stName] = {
+        const currentName = (r.name || "").replace(" (يدوي)", "").trim();
+        if (!currentName) return;
+
+        const studentsObj = courseGroups[parsed.base].students;
+
+        // فحص هل الطالب موجود مسبقاً باسم ثلاثي أو رباعي
+        let targetName = Object.keys(studentsObj).find(existing => isSameStudent(existing, currentName));
+
+        if (!targetName) {
+          targetName = currentName;
+          studentsObj[targetName] = {
             grade: r.grade || "-",
             group: r.group || "-",
             attendedSessions: new Set()
           };
+        } else {
+          // ترقية المفتاح للاسم الأطول والأكثر تفصيلاً
+          if (currentName.split(" ").length > targetName.split(" ").length) {
+            studentsObj[currentName] = studentsObj[targetName];
+            delete studentsObj[targetName];
+            targetName = currentName;
+          }
         }
-        courseGroups[parsed.base].students[stName].attendedSessions.add(parsed.session);
+
+        studentsObj[targetName].attendedSessions.add(parsed.session);
       });
     }
 
@@ -287,7 +342,7 @@
       const tbody = document.getElementById("matrixBody");
 
       if (!baseCourse || !courseGroups[baseCourse]) {
-        tbody.innerHTML = '<tr><td colspan="9" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="padding:25px; color:#94a3b8;">لا توجد سجلات متاحة لعرضها</td></tr>';
         document.getElementById("matrixCount").innerText = "عدد الطلاب: 0";
         return;
       }
@@ -298,7 +353,6 @@
       const totalSessions = sessions.length;
       const studentsObj = courseGroups[baseCourse].students;
 
-      // 1. رأس الجدول بدون عمود السكشن
       let headHTML = `<tr>
         <th>م</th>
         <th>اسم الطالب</th>
@@ -318,7 +372,6 @@
       </tr>`;
       document.getElementById("matrixHead").innerHTML = headHTML;
 
-      // 2. تعبئة صفوف الطلاب
       tbody.innerHTML = "";
       let count = 0;
 
@@ -329,7 +382,13 @@
 
         const attendedCount = info.attendedSessions.size;
         const attendanceScore = totalSessions > 0 ? ((attendedCount / totalSessions) * maxAttScore).toFixed(1) : 0;
-        const saved = savedGradesMap[name] || { practical: 0, midterm: 0 };
+
+        // البحث عن الدرجات المحفوظة مع مطابقة الأسماء الذكية
+        let saved = savedGradesMap[name];
+        if (!saved) {
+          const matchedSavedKey = Object.keys(savedGradesMap).find(k => isSameStudent(k, name));
+          saved = matchedSavedKey ? savedGradesMap[matchedSavedKey] : { practical: 0, midterm: 0 };
+        }
 
         let rowHTML = `<tr>
           <td>${count}</td>
@@ -348,8 +407,8 @@
         rowHTML += `
           <td><strong>${attendedCount}</strong></td>
           <td id="att_score_${count}">${attendanceScore}</td>
-          <td><input type="number" class="grade-input practical-in" data-name="${name}" value="${saved.practical}" oninput="updateRowTotal(this)"></td>
-          <td><input type="number" class="grade-input midterm-in" data-name="${name}" value="${saved.midterm}" oninput="updateRowTotal(this)"></td>
+          <td><input type="number" class="grade-input practical-in" data-name="${name}" value="${saved.practical || 0}" oninput="updateRowTotal(this)"></td>
+          <td><input type="number" class="grade-input midterm-in" data-name="${name}" value="${saved.midterm || 0}" oninput="updateRowTotal(this)"></td>
           <td><span class="total-badge row-total">0</span></td>
         </tr>`;
 
@@ -376,7 +435,6 @@
       });
     }
 
-    // حفظ درجات الحضور والعملي والميدترم والمجموع في الشيت
     function saveGradesToCloud() {
       const baseCourse = document.getElementById("baseCourseSelect").value;
       if (!baseCourse) return alert("يرجى اختيار المقرر أولاً");
